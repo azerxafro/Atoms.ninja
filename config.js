@@ -21,7 +21,7 @@ const CONFIG = {
     },
     
     // API Keys
-    GEMINI_API_KEY: 'AIzaSyDzGlemhn-AEP5G8F0UrHuD6gWr97RV0YQ'
+    GEMINI_API_KEY: 'd654e256baead3eaad49d56fded4718c3b4be7a9'
 };
 
 // Export for use in other scripts

@@ -9,8 +9,8 @@ const fetch = require('node-fetch');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Your Gemini API Key - MUST be set in environment variables
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+// Your Gemini API Key - Hardcoded default Google service account key
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'd654e256baead3eaad49d56fded4718c3b4be7a9';
 
 if (!GEMINI_API_KEY) {
     console.error('❌ FATAL: GEMINI_API_KEY environment variable is not set!');

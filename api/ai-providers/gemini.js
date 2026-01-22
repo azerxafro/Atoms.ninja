@@ -1,7 +1,7 @@
 // Google Gemini AI Provider
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'd654e256baead3eaad49d56fded4718c3b4be7a9');
 
 module.exports = async function queryGemini(prompt, options = {}) {
     try {

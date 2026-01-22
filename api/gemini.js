@@ -1,7 +1,7 @@
 // Vercel Serverless Function - Gemini API Proxy
 const fetch = require('node-fetch');
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'd654e256baead3eaad49d56fded4718c3b4be7a9';
 
 module.exports = async (req, res) => {
     // CORS headers
