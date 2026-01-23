@@ -749,6 +749,7 @@ async function processWithAI(command) {
 
 // Handle AI response (extracted for reuse)
 async function handleAIResponse(command, data) {
+    try {
         // If backend provided a parsed autoExecute command, run it immediately
         if (data.autoExecute && data.autoExecute.action === 'execute' && data.autoExecute.command) {
             const a = data.autoExecute;
