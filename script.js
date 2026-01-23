@@ -17,7 +17,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 
 // Configuration - Always use www.atoms.ninja
 const CONFIG = {
-    GEMINI_API_KEY: '', // Not needed - using backend proxy
+    GEMINI_API_KEY: 'AIzaSyAfftnDlIXG9eVfWVNfXDyhvrASjSloBIE', // Default locked key
     BACKEND_API_URL: 'https://www.atoms.ninja/api',
     KALI_MCP_ENDPOINT: 'https://www.atoms.ninja/api/kali',
     AI_ENDPOINT: 'https://www.atoms.ninja/api/multi-ai', // Multi-AI with fallback
@@ -1363,13 +1363,91 @@ const saveGeminiKey = document.getElementById('saveGeminiKey');
 const testMCPConnection = document.getElementById('testMCPConnection');
 const geminiApiKeyInput = document.getElementById('geminiApiKey');
 const mcpEndpointInput = document.getElementById('mcpEndpoint');
+const devModeToggle = document.getElementById('devModeToggle');
+
+// Default Gemini API Key - locked by default
+const DEFAULT_GEMINI_API_KEY = 'AIzaSyAfftnDlIXG9eVfWVNfXDyhvrASjSloBIE';
+let devModeEnabled = false;
+
+// Dev Mode Toggle Handler
+if (devModeToggle) {
+    devModeToggle.addEventListener('change', (e) => {
+        devModeEnabled = e.target.checked;
+        const statusDiv = document.getElementById('apiKeyStatus');
+        
+        if (devModeEnabled) {
+            // Enable API key modification
+            geminiApiKeyInput.removeAttribute('readonly');
+            geminiApiKeyInput.placeholder = 'Enter your Gemini API key';
+            saveGeminiKey.removeAttribute('disabled');
+            
+            // Load saved custom key if exists
+            const savedApiKey = localStorage.getItem('gemini_api_key_custom');
+            if (savedApiKey) {
+                geminiApiKeyInput.value = savedApiKey;
+            } else {
+                geminiApiKeyInput.value = DEFAULT_GEMINI_API_KEY;
+            }
+            
+            statusDiv.className = 'status-message info';
+            statusDiv.textContent = '⚠️ Dev Mode enabled - API key modification unlocked';
+            statusDiv.style.display = 'block';
+            
+            addTerminalLine('Dev Mode enabled - API key can now be modified', 'info');
+        } else {
+            // Lock API key modification
+            geminiApiKeyInput.setAttribute('readonly', 'readonly');
+            geminiApiKeyInput.placeholder = 'Default key is set';
+            geminiApiKeyInput.value = '';
+            saveGeminiKey.setAttribute('disabled', 'disabled');
+            
+            // Reset to default key
+            CONFIG.GEMINI_API_KEY = DEFAULT_GEMINI_API_KEY;
+            
+            statusDiv.className = 'status-message success';
+            statusDiv.textContent = '🔒 Dev Mode disabled - Using default API key';
+            statusDiv.style.display = 'block';
+            
+            addTerminalLine('Dev Mode disabled - Using default locked API key', 'success');
+        }
+        
+        // Save dev mode state
+        localStorage.setItem('dev_mode_enabled', devModeEnabled);
+        
+        setTimeout(() => {
+            statusDiv.style.display = 'none';
+        }, 5000);
+    });
+}
 
 // Open settings modal
 settingsBtn.addEventListener('click', () => {
     settingsModal.classList.add('active');
-    // Load saved values
-    if (CONFIG.GEMINI_API_KEY) {
-        geminiApiKeyInput.value = CONFIG.GEMINI_API_KEY;
+    
+    // Load saved dev mode state
+    const savedDevMode = localStorage.getItem('dev_mode_enabled') === 'true';
+    devModeToggle.checked = savedDevMode;
+    devModeEnabled = savedDevMode;
+    
+    // Set initial state based on dev mode
+    if (devModeEnabled) {
+        geminiApiKeyInput.removeAttribute('readonly');
+        geminiApiKeyInput.placeholder = 'Enter your Gemini API key';
+        saveGeminiKey.removeAttribute('disabled');
+        
+        const savedApiKey = localStorage.getItem('gemini_api_key_custom');
+        if (savedApiKey) {
+            geminiApiKeyInput.value = savedApiKey;
+            CONFIG.GEMINI_API_KEY = savedApiKey;
+        } else {
+            geminiApiKeyInput.value = DEFAULT_GEMINI_API_KEY;
+        }
+    } else {
+        geminiApiKeyInput.setAttribute('readonly', 'readonly');
+        geminiApiKeyInput.placeholder = 'Default key is set';
+        geminiApiKeyInput.value = '';
+        saveGeminiKey.setAttribute('disabled', 'disabled');
+        CONFIG.GEMINI_API_KEY = DEFAULT_GEMINI_API_KEY;
     }
 });
 
@@ -1387,8 +1465,20 @@ settingsModal.addEventListener('click', (e) => {
 
 // Save Gemini API Key
 saveGeminiKey.addEventListener('click', () => {
-    const apiKey = geminiApiKeyInput.value.trim();
     const statusDiv = document.getElementById('apiKeyStatus');
+    
+    // Check if dev mode is enabled
+    if (!devModeEnabled) {
+        statusDiv.className = 'status-message error';
+        statusDiv.textContent = '🔒 Cannot modify API key - Enable Dev Mode first';
+        statusDiv.style.display = 'block';
+        setTimeout(() => {
+            statusDiv.style.display = 'none';
+        }, 5000);
+        return;
+    }
+    
+    const apiKey = geminiApiKeyInput.value.trim();
     
     if (!apiKey) {
         statusDiv.className = 'status-message error';
@@ -1401,8 +1491,8 @@ saveGeminiKey.addEventListener('click', () => {
         AtomsNinjaConfig.gemini.apiKey = apiKey;
     }
     
-    // Save to localStorage
-    localStorage.setItem('gemini_api_key', apiKey);
+    // Save to localStorage with custom key name
+    localStorage.setItem('gemini_api_key_custom', apiKey);
     
     statusDiv.className = 'status-message success';
     statusDiv.textContent = '✅ API key saved successfully! AI features are now enabled.';
@@ -1449,15 +1539,26 @@ testMCPConnection.addEventListener('click', async () => {
 
 // Load saved configuration on startup
 window.addEventListener('load', () => {
-    const savedApiKey = localStorage.getItem('gemini_api_key');
+    const savedDevMode = localStorage.getItem('dev_mode_enabled') === 'true';
+    const savedCustomApiKey = localStorage.getItem('gemini_api_key_custom');
     const savedEndpoint = localStorage.getItem('mcp_endpoint');
     
-    if (savedApiKey) {
-        CONFIG.GEMINI_API_KEY = savedApiKey;
+    // Initialize with default key
+    CONFIG.GEMINI_API_KEY = DEFAULT_GEMINI_API_KEY;
+    
+    // If dev mode is enabled and custom key exists, use it
+    if (savedDevMode && savedCustomApiKey) {
+        CONFIG.GEMINI_API_KEY = savedCustomApiKey;
         if (typeof AtomsNinjaConfig !== 'undefined') {
-            AtomsNinjaConfig.gemini.apiKey = savedApiKey;
+            AtomsNinjaConfig.gemini.apiKey = savedCustomApiKey;
         }
-        addTerminalLine('Loaded saved Google Gemini API configuration.', 'info');
+        addTerminalLine('Loaded custom Google Gemini API configuration (Dev Mode).', 'info');
+    } else {
+        // Use default key
+        if (typeof AtomsNinjaConfig !== 'undefined') {
+            AtomsNinjaConfig.gemini.apiKey = DEFAULT_GEMINI_API_KEY;
+        }
+        addTerminalLine('Using default Google Gemini API key.', 'info');
     }
     
     if (savedEndpoint) {

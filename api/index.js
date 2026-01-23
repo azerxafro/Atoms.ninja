@@ -3,7 +3,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const OpenAI = require('openai');
 
 // Initialize AI clients
-const geminiClient = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'd654e256baead3eaad49d56fded4718c3b4be7a9');
+const geminiClient = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'AIzaSyAfftnDlIXG9eVfWVNfXDyhvrASjSloBIE');
 const openaiClient = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
 // CORS headers

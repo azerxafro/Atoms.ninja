@@ -243,17 +243,34 @@
             </div>
             <div class="modal-body">
                 <div class="settings-section">
+                    <h3>🔒 Developer Mode</h3>
+                    <p class="settings-description">Enable developer mode to unlock API key modification</p>
+                    <div class="input-group">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="devModeToggle">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-text">Dev Mode Security (Allow API Key Changes)</span>
+                        </label>
+                        <small style="color: #f59e0b;">
+                            ⚠️ <strong>Warning:</strong> Enabling dev mode allows modification of the default API key. Keep this disabled in production environments.
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
                     <h3>🤖 Google Gemini AI</h3>
                     <p class="settings-description">Configure your Gemini API key for AI-powered analysis</p>
                     <div class="input-group">
                         <label for="geminiApiKey">API Key</label>
-                        <input type="password" id="geminiApiKey" placeholder="Enter your Gemini API key">
+                        <input type="password" id="geminiApiKey" placeholder="Default key is set" readonly>
                         <small>
+                            <strong>Default Key:</strong> AIzaSyAfftnDlIXG9eVfWVNfXDyhvrASjSloBIE<br>
+                            <strong>Note:</strong> API key is locked by default. Enable Dev Mode to modify.<br>
                             <strong>Option 1:</strong> AI Studio key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a> (starts with AIza...)<br>
                             <strong>Option 2:</strong> Google Cloud API key - Must enable <a href="https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com" target="_blank">Generative Language API</a>
                         </small>
                     </div>
-                    <button class="btn-primary" id="saveGeminiKey">Save API Key</button>
+                    <button class="btn-primary" id="saveGeminiKey" disabled>Save API Key</button>
                     <div id="apiKeyStatus" class="status-message"></div>
                 </div>
                 
