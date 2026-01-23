@@ -142,6 +142,7 @@ let historyIndex = -1;
 // Advanced AI Memory System
 let chatHistory = [];
 const MAX_CHAT_HISTORY = 20; // Increased from 10
+let conversationMode = 'nerdy'; // 'nerdy' or 'action' - starts in nerdy mode
 let currentSession = {
     id: Date.now(),
     startTime: new Date().toISOString(),
@@ -669,6 +670,20 @@ async function simulateScan(command) {
 // Process with AI (Google Gemini) - Atom Personality
 async function processWithAI(command) {
     try {
+        // Detect if this is a task request
+        const taskKeywords = ['scan', 'hack', 'exploit', 'find', 'check', 'test', 'analyze', 'detect', 
+                              'nmap', 'metasploit', 'sqlmap', 'nikto', 'wireshark', 'burp',
+                              'vulnerability', 'vuln', 'penetration', 'pentest', 'security audit',
+                              'what os', 'what services', 'open ports', 'brute force'];
+        const isTaskRequest = taskKeywords.some(kw => command.toLowerCase().includes(kw));
+        
+        // Switch from nerdy to action mode if task detected
+        if (conversationMode === 'nerdy' && isTaskRequest) {
+            conversationMode = 'action';
+            addTerminalLine('⚡ Switching to ACTION MODE - Initializing MCP server...', 'success');
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
         addTerminalLine('🤖 Atom analyzing...', 'info');
         
         // Get chat context
