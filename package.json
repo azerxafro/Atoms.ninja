@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node gemini-proxy.js",
     "dev": "nodemon gemini-proxy.js",
-    "test": "node gemini-proxy.js & sleep 2 && node test.js"
+    "test": "node gemini-proxy.js & sleep 2 && node test.js",
+    "test:full": "node gemini-proxy.js & sleep 3 && node test-api-and-mcp.js",
+    "test:api": "node test-api-and-mcp.js",
+    "validate": "node validate-config.js",
+    "demo": "node demo-system.js"
   },
   "keywords": [
     "gemini",

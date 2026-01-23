@@ -62,6 +62,21 @@ open index.html
 
 The backend will run on `http://localhost:3001` and the frontend can be opened directly in your browser.
 
+### 4. Verify Installation
+
+```bash
+# Validate configuration
+npm run validate
+
+# View system capabilities
+npm run demo
+
+# Run comprehensive tests (requires backend running)
+npm run test:api
+```
+
+See [API_MCP_VERIFICATION.md](./API_MCP_VERIFICATION.md) for detailed verification guide.
+
 ---
 
 ## 📁 Project Structure
@@ -265,6 +280,17 @@ npm install
 
 # Run in development mode with auto-reload
 npm run dev
+
+# Validate configuration
+npm run validate
+
+# View system demonstration
+npm run demo
+
+# Run tests
+npm test                # Basic tests
+npm run test:full       # Full integration tests
+npm run test:api        # API & MCP server tests
 
 # Run frontend locally
 python3 -m http.server 8000
