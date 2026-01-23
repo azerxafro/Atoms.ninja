@@ -54,9 +54,23 @@ function validateApiKey() {
         }
     }
     
-    // Check environment variable
+    // Check environment variable or config.js
     total++;
-    const apiKey = process.env.GEMINI_API_KEY || 'd654e256baead3eaad49d56fded4718c3b4be7a9';
+    let apiKey = process.env.GEMINI_API_KEY;
+    
+    // If not in env, check config.js
+    if (!apiKey && fs.existsSync('config.js')) {
+        try {
+            const configContent = fs.readFileSync('config.js', 'utf8');
+            const match = configContent.match(/GEMINI_API_KEY:\s*['"]([^'"]+)['"]/);
+            if (match) {
+                apiKey = match[1];
+            }
+        } catch (e) {
+            // Ignore error
+        }
+    }
+    
     if (apiKey) {
         log(`✓ API Key found in environment: ${apiKey.substring(0, 10)}...`, 'green');
         score++;

@@ -13,7 +13,23 @@ const fetch = require('node-fetch');
 // Test Configuration
 const BACKEND_PORT = process.env.PORT || 3001;
 const KALI_MCP_PORT = process.env.KALI_MCP_PORT || 3001;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'd654e256baead3eaad49d56fded4718c3b4be7a9';
+let GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+// If not in env, try to read from config.js
+if (!GEMINI_API_KEY) {
+    try {
+        const fs = require('fs');
+        if (fs.existsSync('config.js')) {
+            const configContent = fs.readFileSync('config.js', 'utf8');
+            const match = configContent.match(/GEMINI_API_KEY:\s*['"]([^'"]+)['"]/);
+            if (match) {
+                GEMINI_API_KEY = match[1];
+            }
+        }
+    } catch (e) {
+        // Ignore error - will be caught in tests
+    }
+}
 
 // Colors for console output
 const colors = {
