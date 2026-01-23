@@ -1,6 +1,7 @@
 // Unified API Handler for Vercel - All endpoints in one function
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const OpenAI = require('openai');
+const { TASK_KEYWORDS } = require('../shared-config');
 
 // Initialize AI clients
 const geminiClient = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'd654e256baead3eaad49d56fded4718c3b4be7a9');
@@ -41,22 +42,18 @@ module.exports = async (req, res) => {
       }
 
       // Detect if user is requesting a task/command
-      const taskKeywords = ['scan', 'hack', 'exploit', 'find', 'check', 'test', 'analyze', 'detect', 
-                            'nmap', 'metasploit', 'sqlmap', 'nikto', 'wireshark', 'burp',
-                            'vulnerability', 'vuln', 'penetration', 'pentest', 'security audit',
-                            'what os', 'what services', 'open ports', 'brute force'];
-      const isTaskRequest = taskKeywords.some(kw => message.toLowerCase().includes(kw));
+      const isTaskRequest = TASK_KEYWORDS.some(kw => message.toLowerCase().includes(kw));
       
       // Check if this is the first conversation (no chat history with user messages)
       const hasConversationHistory = chatHistory && chatHistory.length > 0;
-      const isInitialConversation = !hasConversationHistory || !isTaskRequest;
+      const shouldUseNerdyMode = !isTaskRequest && !hasConversationHistory;
 
       // Try OpenAI first (more reliable)
       if (openaiClient) {
         try {
           let systemPrompt;
           
-          if (!isTaskRequest && isInitialConversation) {
+          if (shouldUseNerdyMode) {
             // NERDY MODE: For initial greetings and general conversation
             systemPrompt = `You are Atom, an enthusiastic cybersecurity AI with a nerdy personality! 🤓
 
