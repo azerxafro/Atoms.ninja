@@ -5,13 +5,13 @@
 }
 
 :root {
-    /* Cyberpunk Hacker Theme - Matrix Green */
+    /* Cyberpunk Hacker Theme - Matrix Green with improved contrast */
     --color-bg: #000000;
     --color-bg-secondary: #001100;
     --color-bg-tertiary: #002200;
     --color-text: #00ff00;
-    --color-text-secondary: #00cc00;
-    --color-text-dim: #008800;
+    --color-text-secondary: #00ff88;  /* Increased brightness for better contrast */
+    --color-text-dim: #00cc00;  /* Increased from #008800 */
     --color-neon-green: #00ff00;
     --color-neon-bright: #00ff41;
     --color-warning: #ff0000;
@@ -205,7 +205,7 @@ button {
     padding: 8px 16px;
     border-radius: 4px;
     border: 1px solid var(--color-neon-green);
-    font-size: 12px;
+    font-size: 14px;  /* Increased from 12px for better readability */
     font-weight: 600;
     margin-bottom: 24px;
     text-transform: uppercase;
@@ -268,7 +268,7 @@ button {
 }
 
 .stat-label {
-    font-size: 14px;
+    font-size: 15px;  /* Increased from 14px */
     color: var(--color-text-secondary);
     margin-top: 4px;
 }
@@ -318,7 +318,7 @@ button {
 .dot.green { background: #00ff00; color: #00ff00; }
 
 .demo-title {
-    font-size: 12px;
+    font-size: 14px;  /* Increased from 12px */
     color: var(--color-text);
     text-transform: uppercase;
     font-weight: bold;
@@ -341,7 +341,7 @@ button {
     padding: 16px;
     color: var(--color-text);
     font-family: 'Courier New', monospace;
-    font-size: 13px;
+    font-size: 14px;  /* Increased from 13px */
     resize: none;
     margin-bottom: 12px;
     transition: all 0.3s ease;
@@ -590,7 +590,7 @@ button {
 
 .footer-tagline {
     color: var(--color-text-secondary);
-    font-size: 14px;
+    font-size: 15px;  /* Increased from 14px */
 }
 
 .footer-links {
@@ -613,7 +613,7 @@ button {
 .footer-column a {
     color: var(--color-text-secondary);
     text-decoration: none;
-    font-size: 14px;
+    font-size: 15px;  /* Increased from 14px */
     transition: color 0.3s ease;
 }
 
@@ -629,7 +629,7 @@ button {
 
 .footer-bottom p {
     color: var(--color-text-secondary);
-    font-size: 14px;
+    font-size: 15px;  /* Increased from 14px */
 }
 
 /* Animations */
@@ -881,7 +881,7 @@ html {
 .input-group small {
     display: block;
     margin-top: 8px;
-    font-size: 12px;
+    font-size: 13px;  /* Increased from 12px */
     color: var(--color-text-secondary);
 }
 
@@ -934,7 +934,7 @@ html {
     padding: 12px 16px;
     border-radius: 8px;
     font-family: 'Courier New', monospace;
-    font-size: 13px;
+    font-size: 14px;  /* Increased from 13px */
     border: 1px solid rgba(139, 92, 246, 0.2);
     cursor: pointer;
     transition: all 0.3s ease;
