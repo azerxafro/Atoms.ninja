@@ -1,0 +1,882 @@
+// Smooth scroll for navigation links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
+});
+
+// Configuration
+const CONFIG = {
+    GEMINI_API_KEY: '', // Not needed - using backend proxy
+    BACKEND_API_URL: window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:3001' 
+        : 'https://atoms-dun.vercel.app', // Production backend URL
+    KALI_MCP_ENDPOINT: window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:3001/api/kali'
+        : 'https://atoms-dun.vercel.app/api/kali' // Kali MCP via HTTPS proxy
+};
+
+// Terminal functionality
+const commandInput = document.getElementById('commandInput');
+const executeBtn = document.getElementById('executeBtn');
+const terminalOutput = document.getElementById('terminalOutput');
+const launchBtn = document.getElementById('launchBtn');
+const docsBtn = document.getElementById('docsBtn');
+
+let isExecuting = false;
+let commandHistory = [];
+let historyIndex = -1;
+
+// Add terminal line
+function addTerminalLine(text, type = 'text') {
+    const line = document.createElement('div');
+    line.className = 'terminal-line';
+    
+    const prompt = document.createElement('span');
+    prompt.className = 'terminal-prompt';
+    prompt.textContent = 'root@atomsninja:~#';
+    
+    const textSpan = document.createElement('span');
+    textSpan.className = `terminal-${type}`;
+    textSpan.textContent = text;
+    
+    line.appendChild(prompt);
+    line.appendChild(textSpan);
+    
+    // Remove cursor before adding new line
+    const cursor = terminalOutput.querySelector('.terminal-cursor');
+    if (cursor) cursor.remove();
+    
+    terminalOutput.appendChild(line);
+    
+    // Add cursor back
+    const newCursor = document.createElement('div');
+    newCursor.className = 'terminal-cursor';
+    newCursor.textContent = '_';
+    terminalOutput.appendChild(newCursor);
+    
+    // Scroll to bottom
+    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+}
+
+// Simulate command execution
+async function executeCommand(command) {
+    if (isExecuting || !command.trim()) return;
+    
+    isExecuting = true;
+    executeBtn.textContent = 'Executing...';
+    executeBtn.style.opacity = '0.7';
+    
+    // Add command to history
+    commandHistory.unshift(command);
+    historyIndex = -1;
+    
+    // Display the command
+    addTerminalLine(`Executing: ${command}`, 'info');
+    
+    // Simulate processing
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Parse and execute command
+    const result = await processCommand(command);
+    addTerminalLine(result.message, result.type);
+    
+    // Clear input
+    commandInput.value = '';
+    
+    isExecuting = false;
+    executeBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        Execute
+    `;
+    executeBtn.style.opacity = '1';
+}
+
+// Process commands with comprehensive AI assistance - AUTO EXECUTE
+async function processCommand(command) {
+    const cmd = command.toLowerCase().trim();
+    
+    // Check if it's a pure question (starts with question words)
+    const questionWords = ['what', 'why', 'how', 'when', 'where', 'who', 'explain', 'tell me', 'describe'];
+    const isQuestion = questionWords.some(word => cmd.startsWith(word)) || cmd.includes('?');
+    
+    if (isQuestion) {
+        // Answer the question
+        return await processWithAI(command);
+    }
+    
+    // Everything else is an ACTION - execute it
+    // AI-powered auto-execution for natural language
+    if (cmd.includes('scan') || cmd.includes('find') || cmd.includes('discover') || cmd.includes('enumerate')) {
+        return await executeWithAI(command, 'scanning');
+    }
+    else if (cmd.includes('crack') || cmd.includes('brute') || cmd.includes('password')) {
+        return await executeWithAI(command, 'password_cracking');
+    }
+    else if (cmd.includes('wifi') || cmd.includes('wireless') || cmd.includes('wpa') || cmd.includes('wep')) {
+        return await executeWithAI(command, 'wireless');
+    }
+    else if (cmd.includes('sql') || cmd.includes('xss') || cmd.includes('injection') || cmd.includes('test website') || cmd.includes('web vuln')) {
+        return await executeWithAI(command, 'web_testing');
+    }
+    else if (cmd.includes('subdomain') || cmd.includes('domain') || cmd.includes('whois') || cmd.includes('dns') || cmd.includes('lookup')) {
+        return await executeWithAI(command, 'information_gathering');
+    }
+    else if (cmd.includes('exploit') || cmd.includes('attack') || cmd.includes('penetrate')) {
+        return await executeWithAI(command, 'exploitation');
+    }
+    else if (cmd.includes('capture') || cmd.includes('sniff') || cmd.includes('monitor') || cmd.includes('traffic') || cmd.includes('packet')) {
+        return await executeWithAI(command, 'network_analysis');
+    }
+    else if (cmd.includes('ssl') || cmd.includes('tls') || cmd.includes('certificate') || cmd.includes('https')) {
+        return await executeWithAI(command, 'ssl_testing');
+    }
+    else if (cmd.includes('directory') || cmd.includes('hidden') || cmd.includes('files') || cmd.includes('directories')) {
+        return await executeWithAI(command, 'web_testing');
+    }
+    else if (cmd.includes('port') || cmd.includes('service') || cmd.includes('host')) {
+        return await executeWithAI(command, 'scanning');
+    }
+    
+    // Direct tool commands - execute immediately
+    else if (cmd.startsWith('nmap ')) {
+        return await executeNmap(command);
+    }
+    else if (cmd.startsWith('hydra ')) {
+        return await executeKaliTool('hydra', command);
+    }
+    else if (cmd.startsWith('john ')) {
+        return await executeKaliTool('john', command);
+    }
+    else if (cmd.startsWith('aircrack')) {
+        return await executeKaliTool('aircrack-ng', command);
+    }
+    else if (cmd.startsWith('sqlmap ')) {
+        return await executeKaliTool('sqlmap', command);
+    }
+    else if (cmd.startsWith('nikto ')) {
+        return await executeKaliTool('nikto', command);
+    }
+    else if (cmd.startsWith('masscan ')) {
+        return await executeKaliTool('masscan', command);
+    }
+    else if (cmd.startsWith('tcpdump ')) {
+        return await executeKaliTool('tcpdump', command);
+    }
+    else if (cmd.startsWith('whois ')) {
+        return await executeKaliTool('whois', command);
+    }
+    else if (cmd.startsWith('dig ')) {
+        return await executeKaliTool('dig', command);
+    }
+    else if (cmd.startsWith('gobuster ')) {
+        return await executeKaliTool('gobuster', command);
+    }
+    else if (cmd.startsWith('amass ')) {
+        return await executeKaliTool('amass', command);
+    }
+    else if (cmd.startsWith('sslscan ')) {
+        return await executeKaliTool('sslscan', command);
+    }
+    else if (cmd === 'help' || cmd === 'tools' || cmd === 'list tools') {
+        return await showAvailableTools();
+    }
+    else {
+        // Unknown command - let AI determine what to do and EXECUTE
+        return await processWithAI(command);
+    }
+}
+
+// Execute real nmap scan via Kali MCP
+async function executeNmap(command) {
+    try {
+        addTerminalLine('🔍 Connecting to Kali MCP, Chief...', 'info');
+        
+        // Parse nmap command
+        const parts = command.trim().split(/\s+/);
+        let target = '';
+        let options = '-F'; // Fast scan by default
+        
+        // Extract target and options
+        for (let i = 1; i < parts.length; i++) {
+            if (parts[i].startsWith('-')) {
+                options = parts.slice(i, -1).join(' ');
+            } else {
+                target = parts[i];
+            }
+        }
+        
+        // If no target specified, use a safe default or ask AI
+        if (!target || target.includes('nmap')) {
+            return await processWithAI(command);
+        }
+        
+        addTerminalLine(`⚡ Scanning ${target}...`, 'text');
+        
+        const response = await fetch(`${CONFIG.KALI_MCP_ENDPOINT}/tools/nmap`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target, options })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`MCP offline, Chief. Status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.stderr && data.stderr.length > 0) {
+            addTerminalLine(`⚠️  ${data.stderr}`, 'warning');
+        }
+        
+        return {
+            message: data.result || 'Scan complete, Chief.',
+            type: 'success'
+        };
+    } catch (error) {
+        console.error('Nmap execution error:', error);
+        return {
+            message: `❌ Mission failed, Chief: ${error.message}\n\nCheck your connection to Kali MCP.`,
+            type: 'error'
+        };
+    }
+}
+
+// AI-powered command execution for natural language
+async function executeWithAI(command, category) {
+    try {
+        addTerminalLine('🎯 Processing, Chief...', 'info');
+        
+        let aiPrompt = `You are an elite cybersecurity operator helping "Chief". Be BRIEF and TACTICAL.
+
+Chief's order: "${command}"
+Category: ${category}
+
+Provide ONLY the command to execute. No explanation unless asked.
+
+Examples:
+"scan network" → nmap -sV -F 192.168.1.0/24
+"crack ssh" → hydra -l admin -P rockyou.txt target ssh
+"enum subdomains" → amass enum -passive -d target.com
+"sql inject" → sqlmap -u "http://target.com?id=1" --batch
+"hidden dirs" → gobuster dir -u http://target.com -w common.txt
+
+For ${category}:
+- Be fast and direct
+- Use appropriate flags for stealth/speed
+- Output: JUST the command
+
+Command:`;
+
+        const aiResponse = await fetch(`${CONFIG.BACKEND_API_URL}/api/gemini`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                prompt: aiPrompt,
+                temperature: 0.3,
+                maxTokens: 60
+            })
+        });
+        
+        if (!aiResponse.ok) throw new Error('AI interpretation failed, Chief');
+        
+        const aiData = await aiResponse.json();
+        let suggestedCommand = aiData.candidates[0].content.parts[0].text.trim();
+        
+        // Clean up the command
+        suggestedCommand = suggestedCommand.replace(/```bash\n?/g, '').replace(/```\n?/g, '').replace(/^[\s\n]+|[\s\n]+$/g, '');
+        suggestedCommand = suggestedCommand.split('\n')[0]; // Take first line only
+        
+        addTerminalLine(`⚡ Executing: ${suggestedCommand}`, 'text');
+        
+        // Parse and execute the suggested command
+        const parts = suggestedCommand.split(/\s+/);
+        const tool = parts[0];
+        
+        if (tool === 'nmap') {
+            return await executeNmap(suggestedCommand);
+        } else {
+            return await executeGeneralCommand(suggestedCommand);
+        }
+        
+    } catch (error) {
+        console.error('AI execution error:', error);
+        return {
+            message: `❌ ${error.message}\n\nTry direct syntax, Chief.`,
+            type: 'error'
+        };
+    }
+}
+
+// Execute general Kali command
+async function executeGeneralCommand(command) {
+    try {
+        const parts = command.trim().split(/\s+/);
+        const tool = parts[0];
+        const args = parts.slice(1);
+        
+        addTerminalLine(`⚡ Executing: ${command}`, 'text');
+        
+        const response = await fetch(`${CONFIG.KALI_MCP_ENDPOINT}/execute`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: tool, args })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Server error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.stderr && data.stderr.length > 0 && !data.result) {
+            addTerminalLine(`⚠️  ${data.stderr}`, 'warning');
+        }
+        
+        return {
+            message: data.result || data.stderr || 'Command executed',
+            type: data.exitCode === 0 ? 'success' : 'warning'
+        };
+        
+    } catch (error) {
+        console.error('Command execution error:', error);
+        return {
+            message: `❌ Error: ${error.message}`,
+            type: 'error'
+        };
+    }
+}
+
+// Execute other Kali tools
+async function executeKaliTool(tool, command) {
+    try {
+        addTerminalLine(`🔧 Executing ${tool}...`, 'info');
+        
+        // Parse command to extract parameters
+        const parts = command.trim().split(/\s+/);
+        const args = parts.slice(1);
+        
+        // Use general execute endpoint for maximum flexibility
+        const response = await fetch(`${CONFIG.KALI_MCP_ENDPOINT}/execute`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: tool, args })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Server error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.stderr && data.stderr.length > 0 && !data.result) {
+            addTerminalLine(`⚠️  ${data.stderr}`, 'warning');
+        }
+        
+        return {
+            message: data.result || data.stderr || 'Command executed',
+            type: data.exitCode === 0 ? 'success' : 'warning'
+        };
+        
+    } catch (error) {
+        console.error(`${tool} execution error:`, error);
+        return {
+            message: `❌ Error executing ${tool}: ${error.message}`,
+            type: 'error'
+        };
+    }
+}
+
+// Show available tools
+async function showAvailableTools() {
+    try {
+        const response = await fetch(`${CONFIG.KALI_MCP_ENDPOINT}/api/tools`);
+        const data = await response.json();
+        
+        let message = '🛠️  KALI LINUX PENETRATION TESTING ARSENAL\n\n';
+        message += '═══════════════════════════════════════════\n\n';
+        
+        for (const [category, tools] of Object.entries(data.categories)) {
+            const categoryName = category.replace(/_/g, ' ').toUpperCase();
+            message += `📦 ${categoryName}:\n`;
+            message += `   ${tools.join(', ')}\n\n`;
+        }
+        
+        message += '═══════════════════════════════════════════\n\n';
+        message += '💬 NATURAL LANGUAGE EXAMPLES:\n\n';
+        message += '• "scan my local network for vulnerabilities"\n';
+        message += '• "crack the wifi password"\n';
+        message += '• "test this website for SQL injection"\n';
+        message += '• "find open ports on 192.168.1.1"\n';
+        message += '• "lookup domain information for google.com"\n';
+        message += '• "brute force ssh on target server"\n';
+        message += '• "capture network traffic"\n\n';
+        
+        message += '⚡ DIRECT COMMANDS:\n\n';
+        message += '• nmap -sV 192.168.1.0/24\n';
+        message += '• hydra -l admin -P rockyou.txt 192.168.1.1 ssh\n';
+        message += '• whois example.com\n';
+        message += '• dig google.com\n';
+        message += '• tcpdump -i eth0 -c 100\n\n';
+        
+        message += '🤖 Or just ask me anything about security!\n';
+        message += 'I\'m your AI penetration testing assistant! 🎯';
+        
+        return { message, type: 'info' };
+    } catch (error) {
+        return {
+            message: '🛠️  CORE KALI TOOLS AVAILABLE:\n\n• nmap - Network scanning\n• hydra - Password cracking\n• john - Hash cracking\n• aircrack-ng - Wireless attacks\n• sqlmap - SQL injection\n• nikto - Web scanning\n• tcpdump - Packet capture\n• whois/dig - Domain info\n\nTry natural language like:\n"scan my network" or "crack wifi password"\n\nOr ask me anything! 🤖',
+            type: 'info'
+        };
+    }
+}
+
+
+// Process with AI (Google Gemini) - Auto-execute commands
+async function processWithAI(command) {
+    try {
+        addTerminalLine('🎯 AI analyzing and executing, Chief...', 'info');
+        
+        const prompt = `You are an elite cybersecurity operator AI. Chief gave you this order: "${command}"
+
+Your job: Determine what Chief wants and EXECUTE IT.
+
+If it's a QUESTION/EXPLANATION request:
+- Answer briefly (max 50 words)
+- Be tactical, use "Chief"
+
+If it's an ACTION request (scan, crack, enum, test, find, check, etc.):
+- Output ONLY the exact command to execute
+- NO explanations, NO "you should", NO instructions
+- Just the raw command
+
+Examples:
+"what is nmap?" → Brief answer about nmap
+"how does SQL injection work?" → Brief explanation
+
+"scan 192.168.1.1" → nmap -sV -F 192.168.1.1
+"find subdomains" → amass enum -passive -d target.com
+"crack ssh" → hydra -l admin -P rockyou.txt target ssh
+"check ssl" → sslscan target.com
+"sql inject test" → sqlmap -u "http://target.com?id=1" --batch
+
+Respond with EITHER:
+1. Brief answer (if question)
+2. Raw command only (if action)
+
+No chitchat. Execute or explain.`;
+
+        const response = await fetch(`${CONFIG.BACKEND_API_URL}/api/gemini`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                prompt: prompt,
+                temperature: 0.3,
+                maxTokens: 80
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Backend API Error:', errorData);
+            
+            if (response.status === 503) {
+                throw new Error('Backend offline, Chief. Check your six.');
+            } else if (response.status === 401 || response.status === 403) {
+                throw new Error('Auth failed, Chief. Service account needs attention.');
+            } else {
+                throw new Error(errorData.error || `Backend error: ${response.status}`);
+            }
+        }
+        
+        const data = await response.json();
+        
+        if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
+            throw new Error('Invalid response format from AI');
+        }
+        
+        const aiResponse = data.candidates[0].content.parts[0].text.trim();
+        
+        // Check if AI returned a command or an explanation
+        const isCommand = aiResponse.split(' ')[0] && 
+                         (aiResponse.includes('nmap') || aiResponse.includes('hydra') || 
+                          aiResponse.includes('sqlmap') || aiResponse.includes('amass') ||
+                          aiResponse.includes('gobuster') || aiResponse.includes('nikto') ||
+                          aiResponse.includes('sslscan') || aiResponse.includes('aircrack') ||
+                          aiResponse.includes('john') || aiResponse.includes('masscan') ||
+                          aiResponse.includes('tcpdump') || aiResponse.includes('whois') ||
+                          aiResponse.includes('dig') || aiResponse.includes('sublist3r'));
+        
+        if (isCommand) {
+            // AI returned a command - EXECUTE IT
+            const cleanCommand = aiResponse.replace(/```bash\n?/g, '').replace(/```\n?/g, '').split('\n')[0].trim();
+            addTerminalLine(`⚡ Executing: ${cleanCommand}`, 'text');
+            
+            // Parse and execute
+            const parts = cleanCommand.split(/\s+/);
+            const tool = parts[0];
+            
+            if (tool === 'nmap') {
+                return await executeNmap(cleanCommand);
+            } else {
+                return await executeGeneralCommand(cleanCommand);
+            }
+        } else {
+            // AI returned an explanation
+            return {
+                message: `Chief, ${aiResponse}`,
+                type: 'info'
+            };
+        }
+    } catch (error) {
+        console.error('AI Error:', error);
+        
+        if (error.message.includes('fetch')) {
+            return {
+                message: `⚠️ Backend offline, Chief. Check connection.`,
+                type: 'error'
+            };
+        }
+        
+        return {
+            message: `⚠️ ${error.message}`,
+            type: 'error'
+        };
+    }
+}
+
+// Execute button handler
+executeBtn.addEventListener('click', () => {
+    executeCommand(commandInput.value);
+});
+
+// Enter key to execute
+commandInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        executeCommand(commandInput.value);
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (historyIndex < commandHistory.length - 1) {
+            historyIndex++;
+            commandInput.value = commandHistory[historyIndex];
+        }
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (historyIndex > 0) {
+            historyIndex--;
+            commandInput.value = commandHistory[historyIndex];
+        } else if (historyIndex === 0) {
+            historyIndex = -1;
+            commandInput.value = '';
+        }
+    }
+});
+
+// Launch console button
+launchBtn.addEventListener('click', () => {
+    document.getElementById('commandInput').focus();
+    document.querySelector('.demo-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
+// Documentation button
+docsBtn.addEventListener('click', () => {
+    addTerminalLine('Documentation: Visit https://www.kali.org/docs/ for Kali Linux tools reference', 'info');
+});
+
+// Add typing effect to command input
+commandInput.addEventListener('focus', () => {
+    commandInput.style.transform = 'scale(1.01)';
+});
+
+commandInput.addEventListener('blur', () => {
+    commandInput.style.transform = 'scale(1)';
+});
+let ticking = false;
+
+window.addEventListener('scroll', () => {
+    if (!ticking) {
+        window.requestAnimationFrame(() => {
+            const scrolled = window.pageYOffset;
+            const parallaxElements = document.querySelectorAll('.demo-card');
+            
+            parallaxElements.forEach(el => {
+                const speed = 0.5;
+                const yPos = -(scrolled * speed);
+                el.style.transform = `translateY(${yPos}px)`;
+            });
+            
+            ticking = false;
+        });
+        ticking = true;
+    }
+});
+
+// Add floating animation to feature cards
+const featureCards = document.querySelectorAll('.feature-card');
+
+featureCards.forEach((card, index) => {
+    card.style.animationDelay = `${index * 0.1}s`;
+    
+    card.addEventListener('mouseenter', () => {
+        card.style.transform = 'translateY(-12px) rotate(1deg)';
+    });
+    
+    card.addEventListener('mouseleave', () => {
+        card.style.transform = 'translateY(0) rotate(0deg)';
+    });
+});
+
+// Button ripple effect
+const buttons = document.querySelectorAll('button');
+
+buttons.forEach(button => {
+    button.addEventListener('click', function(e) {
+        const ripple = document.createElement('span');
+        const rect = this.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = e.clientX - rect.left - size / 2;
+        const y = e.clientY - rect.top - size / 2;
+        
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = x + 'px';
+        ripple.style.top = y + 'px';
+        ripple.classList.add('ripple');
+        
+        this.appendChild(ripple);
+        
+        setTimeout(() => {
+            ripple.remove();
+        }, 600);
+    });
+});
+
+// Add ripple effect styles dynamically
+const style = document.createElement('style');
+style.textContent = `
+    button {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .ripple {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(0);
+        animation: ripple-animation 0.6s ease-out;
+        pointer-events: none;
+    }
+    
+    @keyframes ripple-animation {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+
+// Intersection Observer for fade-in animations
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -100px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+        }
+    });
+}, observerOptions);
+
+// Observe all feature cards and stats
+const animatedElements = document.querySelectorAll('.feature-card, .stat-item');
+animatedElements.forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(30px)';
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    observer.observe(el);
+});
+
+// Add cursor glow effect
+const cursorGlow = document.createElement('div');
+cursorGlow.style.cssText = `
+    position: fixed;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.3s ease;
+    opacity: 0;
+`;
+document.body.appendChild(cursorGlow);
+
+document.addEventListener('mousemove', (e) => {
+    cursorGlow.style.left = e.clientX + 'px';
+    cursorGlow.style.top = e.clientY + 'px';
+    cursorGlow.style.opacity = '1';
+});
+
+document.addEventListener('mouseleave', () => {
+    cursorGlow.style.opacity = '0';
+});
+
+// Console Easter egg
+console.log('%c🥷 Atoms Ninja - Cybersecurity Platform', 'font-size: 24px; font-weight: bold; background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;');
+console.log('%c⚠️  For authorized security testing only!', 'font-size: 14px; color: #EF4444; font-weight: bold;');
+console.log('%cPowered by Kali Linux MCP & Google Gemini AI', 'font-size: 12px; color: #8B5CF6;');
+
+// API Configuration Helper
+window.setGeminiAPIKey = function(apiKey) {
+    CONFIG.GEMINI_API_KEY = apiKey;
+    console.log('%c✓ Gemini API Key configured successfully!', 'color: #10B981; font-weight: bold;');
+    addTerminalLine('Google Gemini AI authentication successful.', 'success');
+};
+
+// Display instructions on load
+window.addEventListener('load', () => {
+    console.log('%cTo enable AI features, run: setGeminiAPIKey("your-api-key-here")', 'color: #8B5CF6; font-style: italic;');
+});
+
+// Settings Modal
+const settingsModal = document.getElementById('settingsModal');
+const settingsBtn = document.getElementById('settingsBtn');
+const closeModal = document.getElementById('closeModal');
+const saveGeminiKey = document.getElementById('saveGeminiKey');
+const testMCPConnection = document.getElementById('testMCPConnection');
+const geminiApiKeyInput = document.getElementById('geminiApiKey');
+const mcpEndpointInput = document.getElementById('mcpEndpoint');
+
+// Open settings modal
+settingsBtn.addEventListener('click', () => {
+    settingsModal.classList.add('active');
+    // Load saved values
+    if (CONFIG.GEMINI_API_KEY) {
+        geminiApiKeyInput.value = CONFIG.GEMINI_API_KEY;
+    }
+});
+
+// Close modal
+closeModal.addEventListener('click', () => {
+    settingsModal.classList.remove('active');
+});
+
+// Close on outside click
+settingsModal.addEventListener('click', (e) => {
+    if (e.target === settingsModal) {
+        settingsModal.classList.remove('active');
+    }
+});
+
+// Save Gemini API Key
+saveGeminiKey.addEventListener('click', () => {
+    const apiKey = geminiApiKeyInput.value.trim();
+    const statusDiv = document.getElementById('apiKeyStatus');
+    
+    if (!apiKey) {
+        statusDiv.className = 'status-message error';
+        statusDiv.textContent = '❌ Please enter a valid API key';
+        return;
+    }
+    
+    CONFIG.GEMINI_API_KEY = apiKey;
+    if (typeof AtomsNinjaConfig !== 'undefined') {
+        AtomsNinjaConfig.gemini.apiKey = apiKey;
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('gemini_api_key', apiKey);
+    
+    statusDiv.className = 'status-message success';
+    statusDiv.textContent = '✅ API key saved successfully! AI features are now enabled.';
+    
+    addTerminalLine('Google Gemini AI configured and ready.', 'success');
+    
+    setTimeout(() => {
+        statusDiv.style.display = 'none';
+    }, 5000);
+});
+
+// Test MCP Connection
+testMCPConnection.addEventListener('click', async () => {
+    const endpoint = mcpEndpointInput.value.trim();
+    const statusDiv = document.getElementById('mcpStatus');
+    
+    statusDiv.className = 'status-message info';
+    statusDiv.textContent = '🔄 Testing connection...';
+    
+    try {
+        // Simulate connection test (replace with actual MCP server check)
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        CONFIG.KALI_MCP_ENDPOINT = endpoint;
+        if (typeof AtomsNinjaConfig !== 'undefined') {
+            AtomsNinjaConfig.kaliMCP.endpoint = endpoint;
+        }
+        
+        localStorage.setItem('mcp_endpoint', endpoint);
+        
+        statusDiv.className = 'status-message success';
+        statusDiv.textContent = '✅ Connected to Kali Linux MCP Server';
+        
+        addTerminalLine(`MCP Server connected at ${endpoint}`, 'success');
+    } catch (error) {
+        statusDiv.className = 'status-message error';
+        statusDiv.textContent = '❌ Connection failed. Please check the endpoint and try again.';
+    }
+    
+    setTimeout(() => {
+        statusDiv.style.display = 'none';
+    }, 5000);
+});
+
+// Load saved configuration on startup
+window.addEventListener('load', () => {
+    const savedApiKey = localStorage.getItem('gemini_api_key');
+    const savedEndpoint = localStorage.getItem('mcp_endpoint');
+    
+    if (savedApiKey) {
+        CONFIG.GEMINI_API_KEY = savedApiKey;
+        if (typeof AtomsNinjaConfig !== 'undefined') {
+            AtomsNinjaConfig.gemini.apiKey = savedApiKey;
+        }
+        addTerminalLine('Loaded saved Google Gemini API configuration.', 'info');
+    }
+    
+    if (savedEndpoint) {
+        CONFIG.KALI_MCP_ENDPOINT = savedEndpoint;
+        if (typeof AtomsNinjaConfig !== 'undefined') {
+            AtomsNinjaConfig.kaliMCP.endpoint = savedEndpoint;
+        }
+        mcpEndpointInput.value = savedEndpoint;
+    }
+});
+
+// Quick command clicks
+document.querySelectorAll('.quick-commands code').forEach(codeEl => {
+    codeEl.addEventListener('click', () => {
+        commandInput.value = codeEl.textContent;
+        commandInput.focus();
+        settingsModal.classList.remove('active');
+        document.querySelector('.demo-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+});
