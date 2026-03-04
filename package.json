@@ -1,11 +1,13 @@
 {
   "name": "atoms-ninja-backend",
   "version": "1.0.0",
-  "description": "Backend proxy server for Atoms Ninja with Google Cloud Service Account authentication",
+  "description": "Unified AI + Kali Security Backend for Atoms Ninja",
   "main": "gemini-proxy.js",
   "scripts": {
     "start": "node gemini-proxy.js",
+    "start:arsenal": "node atoms-server.js",
     "dev": "nodemon gemini-proxy.js",
+    "dev:arsenal": "nodemon atoms-server.js",
     "test": "node gemini-proxy.js & sleep 2 && node test.js",
     "test:full": "node gemini-proxy.js & sleep 3 && node test-api-and-mcp.js",
     "test:api": "node test-api-and-mcp.js",
@@ -21,23 +23,19 @@
   "author": "Atoms Ninja Team",
   "license": "MIT",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.68.0",
     "@google/generative-ai": "^0.24.1",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "express-rate-limit": "^7.1.5",
-    "google-auth-library": "^9.0.0",
-    "groq-sdk": "^0.34.0",
-    "node-fetch": "^2.7.0",
-    "openai": "^6.8.1"
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.5.0",
+    "node-fetch": "^2.7.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   }
 }
