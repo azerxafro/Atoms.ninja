@@ -862,10 +862,8 @@ INSTRUCTIONS:
       addTerminalLine("🥷 Connecting to Ninja...", "info");
       addTerminalLine(`⚡ Scanning ${target}...`, "info");
 
-      // Use proxy endpoint in production, direct in dev
-      const endpoint = CONFIG.KALI_MCP_ENDPOINT.includes("/api/kali")
-        ? `${CONFIG.KALI_MCP_ENDPOINT}/tools/nmap`
-        : `${CONFIG.KALI_MCP_ENDPOINT}/api/tools/nmap`;
+      // Fix: Use generic backend API URL instead of appending to KALI_MCP_ENDPOINT
+      const endpoint = `${CONFIG.BACKEND_API_URL}/tools/nmap`;
 
       console.log("🔧 DEBUG - Endpoint:", endpoint);
       console.log("🔧 DEBUG - Target:", target, "Options:", options);
