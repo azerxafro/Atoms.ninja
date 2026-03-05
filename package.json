@@ -2,20 +2,20 @@
   "name": "atoms-ninja-backend",
   "version": "1.0.0",
   "description": "Unified AI + Kali Security Backend for Atoms Ninja",
-  "main": "gemini-proxy.js",
+  "main": "atoms-server.js",
   "scripts": {
-    "start": "node gemini-proxy.js",
+    "start": "node atoms-server.js",
     "start:arsenal": "node atoms-server.js",
-    "dev": "nodemon gemini-proxy.js",
+    "dev": "nodemon atoms-server.js",
     "dev:arsenal": "nodemon atoms-server.js",
-    "test": "node gemini-proxy.js & sleep 2 && node test.js",
-    "test:full": "node gemini-proxy.js & sleep 3 && node test-api-and-mcp.js",
+    "test": "node atoms-server.js & sleep 2 && node test.js",
+    "test:full": "node atoms-server.js & sleep 3 && node test-api-and-mcp.js",
     "test:api": "node test-api-and-mcp.js",
     "validate": "node validate-config.js",
     "demo": "node demo-system.js"
   },
   "keywords": [
-    "gemini",
+    "openrouter",
     "proxy",
     "cybersecurity",
     "atoms-ninja"
@@ -23,7 +23,6 @@
   "author": "Atoms Ninja Team",
   "license": "MIT",
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "cors": "^2.8.5",

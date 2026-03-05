@@ -16,10 +16,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Configuration - Always use www.atoms.ninja
   const CONFIG = {
-    GEMINI_API_KEY: "AIzaSyAfftnDlIXG9eVfWVNfXDyhvrASjSloBIE", // Default locked key
     BACKEND_API_URL: "https://www.atoms.ninja/api",
     KALI_MCP_ENDPOINT: "https://www.atoms.ninja/api/kali",
-    AI_ENDPOINT: "https://www.atoms.ninja/api/multi-ai", // Multi-AI with fallback
+    AI_ENDPOINT: "https://www.atoms.ninja/api/multi-ai", // Multi-AI via OpenRouter
     AI_HEALTH_ENDPOINT: "https://www.atoms.ninja/api/ai-health",
     AI_MODE: "fast", // fast | accurate | stealth
   };
@@ -1585,15 +1584,7 @@ INSTRUCTIONS:
     "font-size: 12px; color: #00ff00;",
   );
 
-  // API Configuration Helper
-  window.setGeminiAPIKey = function (apiKey) {
-    CONFIG.GEMINI_API_KEY = apiKey;
-    console.log(
-      "%c✓ Gemini API Key configured successfully!",
-      "color: #10B981; font-weight: bold;",
-    );
-    addTerminalLine("Google Gemini AI authentication successful.", "success");
-  };
+  // API is handled server-side via OpenRouter — no client-side key needed
 
   // Clear chat history helper
   window.clearChatHistory = function () {
@@ -1817,7 +1808,7 @@ Tool: Atoms Ninja Cybersecurity Platform
     console.log("%c  • clearChatHistory() - Clear memory", "color: #8B5CF6;");
 
     console.log(
-      '%cTo enable AI features, run: setGeminiAPIKey("your-api-key-here")',
+      "%cAI features powered by OpenRouter (server-side)",
       "color: #8B5CF6; font-style: italic;",
     );
   });
@@ -1832,8 +1823,6 @@ Tool: Atoms Ninja Cybersecurity Platform
   const mcpEndpointInput = document.getElementById("mcpEndpoint");
   const devModeToggle = document.getElementById("devModeToggle");
 
-  // Default Gemini API Key - locked by default
-  const DEFAULT_GEMINI_API_KEY = "AIzaSyAfftnDlIXG9eVfWVNfXDyhvrASjSloBIE";
   let devModeEnabled = false;
 
   // Dev Mode Toggle Handler
@@ -1843,51 +1832,18 @@ Tool: Atoms Ninja Cybersecurity Platform
       const statusDiv = document.getElementById("apiKeyStatus");
 
       if (devModeEnabled) {
-        // Enable API key modification
-        geminiApiKeyInput.removeAttribute("readonly");
-        geminiApiKeyInput.placeholder = "Enter your Gemini API key";
-        saveGeminiKey.removeAttribute("disabled");
-
-        // Load saved custom key if exists
-        const savedApiKey = localStorage.getItem("gemini_api_key_custom");
-        if (savedApiKey) {
-          geminiApiKeyInput.value = savedApiKey;
-        } else {
-          geminiApiKeyInput.value = DEFAULT_GEMINI_API_KEY;
-        }
-
         statusDiv.className = "status-message info";
-        statusDiv.textContent =
-          "⚠️ Dev Mode enabled - API key modification unlocked";
+        statusDiv.textContent = "⚠️ Dev Mode enabled";
         statusDiv.style.display = "block";
-
-        addTerminalLine(
-          "Dev Mode enabled - API key can now be modified",
-          "info",
-        );
+        addTerminalLine("Dev Mode enabled", "info");
       } else {
-        // Lock API key modification
-        geminiApiKeyInput.setAttribute("readonly", "readonly");
-        geminiApiKeyInput.placeholder = "Default key is set";
-        geminiApiKeyInput.value = "";
-        saveGeminiKey.setAttribute("disabled", "disabled");
-
-        // Reset to default key
-        CONFIG.GEMINI_API_KEY = DEFAULT_GEMINI_API_KEY;
-
         statusDiv.className = "status-message success";
-        statusDiv.textContent = "🔒 Dev Mode disabled - Using default API key";
+        statusDiv.textContent = "🔒 Dev Mode disabled";
         statusDiv.style.display = "block";
-
-        addTerminalLine(
-          "Dev Mode disabled - Using default locked API key",
-          "success",
-        );
+        addTerminalLine("Dev Mode disabled", "success");
       }
 
-      // Save dev mode state
       localStorage.setItem("dev_mode_enabled", devModeEnabled);
-
       setTimeout(() => {
         statusDiv.style.display = "none";
       }, 5000);
@@ -1902,27 +1858,6 @@ Tool: Atoms Ninja Cybersecurity Platform
     const savedDevMode = localStorage.getItem("dev_mode_enabled") === "true";
     devModeToggle.checked = savedDevMode;
     devModeEnabled = savedDevMode;
-
-    // Set initial state based on dev mode
-    if (devModeEnabled) {
-      geminiApiKeyInput.removeAttribute("readonly");
-      geminiApiKeyInput.placeholder = "Enter your Gemini API key";
-      saveGeminiKey.removeAttribute("disabled");
-
-      const savedApiKey = localStorage.getItem("gemini_api_key_custom");
-      if (savedApiKey) {
-        geminiApiKeyInput.value = savedApiKey;
-        CONFIG.GEMINI_API_KEY = savedApiKey;
-      } else {
-        geminiApiKeyInput.value = DEFAULT_GEMINI_API_KEY;
-      }
-    } else {
-      geminiApiKeyInput.setAttribute("readonly", "readonly");
-      geminiApiKeyInput.placeholder = "Default key is set";
-      geminiApiKeyInput.value = "";
-      saveGeminiKey.setAttribute("disabled", "disabled");
-      CONFIG.GEMINI_API_KEY = DEFAULT_GEMINI_API_KEY;
-    }
   });
 
   // Close modal
@@ -1937,48 +1872,7 @@ Tool: Atoms Ninja Cybersecurity Platform
     }
   });
 
-  // Save Gemini API Key
-  saveGeminiKey.addEventListener("click", () => {
-    const statusDiv = document.getElementById("apiKeyStatus");
-
-    // Check if dev mode is enabled
-    if (!devModeEnabled) {
-      statusDiv.className = "status-message error";
-      statusDiv.textContent =
-        "🔒 Cannot modify API key - Enable Dev Mode first";
-      statusDiv.style.display = "block";
-      setTimeout(() => {
-        statusDiv.style.display = "none";
-      }, 5000);
-      return;
-    }
-
-    const apiKey = geminiApiKeyInput.value.trim();
-
-    if (!apiKey) {
-      statusDiv.className = "status-message error";
-      statusDiv.textContent = "❌ Please enter a valid API key";
-      return;
-    }
-
-    CONFIG.GEMINI_API_KEY = apiKey;
-    if (typeof AtomsNinjaConfig !== "undefined") {
-      AtomsNinjaConfig.gemini.apiKey = apiKey;
-    }
-
-    // Save to localStorage with custom key name
-    localStorage.setItem("gemini_api_key_custom", apiKey);
-
-    statusDiv.className = "status-message success";
-    statusDiv.textContent =
-      "✅ API key saved successfully! AI features are now enabled.";
-
-    addTerminalLine("Google Gemini AI configured and ready.", "success");
-
-    setTimeout(() => {
-      statusDiv.style.display = "none";
-    }, 5000);
-  });
+  // API key handling removed — AI runs through OpenRouter on the server
 
   // Test MCP Connection
   testMCPConnection.addEventListener("click", async () => {
@@ -2016,30 +1910,9 @@ Tool: Atoms Ninja Cybersecurity Platform
 
   // Load saved configuration on startup
   window.addEventListener("load", () => {
-    const savedDevMode = localStorage.getItem("dev_mode_enabled") === "true";
-    const savedCustomApiKey = localStorage.getItem("gemini_api_key_custom");
     const savedEndpoint = localStorage.getItem("mcp_endpoint");
 
-    // Initialize with default key
-    CONFIG.GEMINI_API_KEY = DEFAULT_GEMINI_API_KEY;
-
-    // If dev mode is enabled and custom key exists, use it
-    if (savedDevMode && savedCustomApiKey) {
-      CONFIG.GEMINI_API_KEY = savedCustomApiKey;
-      if (typeof AtomsNinjaConfig !== "undefined") {
-        AtomsNinjaConfig.gemini.apiKey = savedCustomApiKey;
-      }
-      addTerminalLine(
-        "Loaded custom Google Gemini API configuration (Dev Mode).",
-        "info",
-      );
-    } else {
-      // Use default key
-      if (typeof AtomsNinjaConfig !== "undefined") {
-        AtomsNinjaConfig.gemini.apiKey = DEFAULT_GEMINI_API_KEY;
-      }
-      addTerminalLine("Using default Google Gemini API key.", "info");
-    }
+    addTerminalLine("AI powered by OpenRouter (server-side).", "info");
 
     if (savedEndpoint) {
       CONFIG.KALI_MCP_ENDPOINT = savedEndpoint;

@@ -9,10 +9,21 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 const FREE_MODELS = [
-  "deepseek/deepseek-chat-v3-0324:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "qwen/qwen-3-235b-a22b:free",
+  // Tier 1 — Best free models
   "mistralai/mistral-small-3.1-24b-instruct:free",
+  "deepseek/deepseek-chat-v3-0324:free",
+  "deepseek/deepseek-r1-0528:free",
+  "qwen/qwen-3-235b-a22b:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  // Tier 2 — Strong alternatives
+  "google/gemini-2.0-flash-exp:free",
+  "nvidia/llama-3.1-nemotron-70b-instruct:free",
+  "qwen/qwen3-coder:free",
+  // Tier 3 — Fallbacks
+  "mistralai/devstral-2:free",
+  "openai/gpt-oss-120b:free",
+  "arcee-ai/trinity-large-preview:free",
+  "stepfun/step-3.5-flash:free",
 ];
 
 const TASK_KEYWORDS = [
@@ -396,13 +407,11 @@ module.exports = async (req, res) => {
         },
         { role: "user", content: message },
       ]);
-      return res
-        .status(200)
-        .json({
-          response: result.content,
-          provider: result.provider,
-          model: result.model,
-        });
+      return res.status(200).json({
+        response: result.content,
+        provider: result.provider,
+        model: result.model,
+      });
     }
 
     // ─── Tools list ──────────────────────────
