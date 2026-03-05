@@ -70,6 +70,7 @@ if [ "$SG_ID" = "None" ] || [ -z "$SG_ID" ]; then
         --region $REGION \
         --group-name "$SG_NAME" \
         --description "Atoms Ninja - SSH + API access" \
+        --query 'GroupId' \
         --output text)
     echo "   Created SG: $SG_ID"
 
