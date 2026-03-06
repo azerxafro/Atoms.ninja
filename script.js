@@ -1003,14 +1003,15 @@ INSTRUCTIONS:
       }
 
       // Show AI metadata
+      const ninjaRank = data.provider === 'openrouter' ? 'Ninja Shinobi' : data.provider === 'bedrock' ? 'Ninja Jōnin' : 'Ninja';
       if (data.consensus) {
         addTerminalLine(
-          `🎯 Consensus response (${data.confidence}% confidence, ${data.provider})`,
+          `🎯 Consensus response (${data.confidence}% confidence, ${ninjaRank})`,
           "success",
         );
       } else {
         addTerminalLine(
-          `🤖 Response from ${data.provider} (${data.model})`,
+          `🤖 ${ninjaRank} responds...`,
           "info",
         );
       }

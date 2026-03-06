@@ -15,72 +15,22 @@ const cors = require("cors");
 const { spawn } = require("child_process");
 const rateLimit = require("express-rate-limit");
 
+const {
+  TASK_KEYWORDS,
+  getNerdyPrompt,
+  getActionPrompt,
+  callAI,
+  buildThinkingChain,
+} = require("./lib/ai-core");
+
+// Backward-compat alias (used in /api/openrouter route below)
+const callOpenRouter = (messages, model) =>
+  callAI(messages, model ? { model } : {});
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// ═══════════════════════════════════════════════
-//  OpenRouter Configuration
-// ═══════════════════════════════════════════════
-
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
-
-const FREE_MODELS = [
-  // Tier 1 — Best free models
-  "mistralai/mistral-small-3.1-24b-instruct:free",
-  "deepseek/deepseek-chat-v3-0324:free",
-  "deepseek/deepseek-r1-0528:free",
-  "qwen/qwen-3-235b-a22b:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  // Tier 2 — Strong alternatives
-  "google/gemini-2.0-flash-exp:free",
-  "nvidia/llama-3.1-nemotron-70b-instruct:free",
-  "qwen/qwen3-coder:free",
-  // Tier 3 — Fallbacks
-  "mistralai/devstral-2:free",
-  "openai/gpt-oss-120b:free",
-  "arcee-ai/trinity-large-preview:free",
-  "stepfun/step-3.5-flash:free",
-];
-
-const TASK_KEYWORDS = [
-  "scan",
-  "hack",
-  "exploit",
-  "find",
-  "check",
-  "test",
-  "analyze",
-  "detect",
-  "nmap",
-  "metasploit",
-  "sqlmap",
-  "nikto",
-  "wireshark",
-  "burp",
-  "vulnerability",
-  "vuln",
-  "penetration",
-  "pentest",
-  "security audit",
-  "what os",
-  "what services",
-  "open ports",
-  "brute force",
-  "recon",
-  "enumerate",
-  "crack",
-  "sniff",
-  "intercept",
-  "inject",
-  "fuzz",
-  "discover",
-  "lookup",
-  "trace",
-  "dump",
-  "capture",
-  "harvest",
-];
 
 // ═══════════════════════════════════════════════
 //  COMPLETE Kali Arsenal — ALL Commands
@@ -433,186 +383,6 @@ async function executeTool(command, args, options = {}) {
 }
 
 // ═══════════════════════════════════════════════
-//  OpenRouter AI Client
-// ═══════════════════════════════════════════════
-
-async function callOpenRouter(messages, model = null) {
-  if (!OPENROUTER_API_KEY) throw new Error("OPENROUTER_API_KEY not configured");
-
-  const models = model ? [model] : [...FREE_MODELS];
-  let lastError = null;
-
-  for (const currentModel of models) {
-    try {
-      const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://atoms.ninja",
-          "X-Title": "Atoms Ninja",
-        },
-        body: JSON.stringify({
-          model: currentModel,
-          messages,
-          temperature: 0.7,
-          max_tokens: 800,
-        }),
-      });
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        lastError = new Error(
-          err.error?.message || `Model ${currentModel} failed`,
-        );
-        continue;
-      }
-
-      const data = await response.json();
-      const reply = data.choices?.[0]?.message?.content?.trim();
-      if (!reply) {
-        lastError = new Error(`Empty response from ${currentModel}`);
-        continue;
-      }
-
-      return { content: reply, model: currentModel, provider: "openrouter" };
-    } catch (err) {
-      lastError = err;
-      continue;
-    }
-  }
-  throw lastError || new Error("All OpenRouter models failed");
-}
-
-// ═══════════════════════════════════════════════
-//  AI Thinking Chain — Shows Reasoning Process
-// ═══════════════════════════════════════════════
-
-function buildThinkingChain(userMessage, aiReply, parsedCommand, toolResult) {
-  const steps = [];
-
-  // Step 1: Understanding
-  steps.push({
-    step: 1,
-    title: "🧠 Understanding Request",
-    content: `User asked: "${userMessage}"\nAnalyzing intent and extracting targets...`,
-  });
-
-  // Step 2: Planning
-  if (parsedCommand) {
-    steps.push({
-      step: 2,
-      title: "📋 Planning Approach",
-      content: `Selected tool: ${parsedCommand.command.split(" ")[0]}\nReason: ${parsedCommand.explanation}\nFull command: ${parsedCommand.command}`,
-    });
-  } else {
-    steps.push({
-      step: 2,
-      title: "📋 Response Strategy",
-      content: "No tool execution needed. Providing informational response.",
-    });
-  }
-
-  // Step 3: Execution
-  if (toolResult) {
-    const status =
-      toolResult.exitCode === 0
-        ? "✅ Success"
-        : `⚠️ Exit code ${toolResult.exitCode}`;
-    steps.push({
-      step: 3,
-      title: "⚡ Executing Command",
-      content: `Status: ${status}\nOutput length: ${(toolResult.result || "").length} chars\n${toolResult.stderr ? `Warnings: ${toolResult.stderr.substring(0, 200)}` : "No warnings"}`,
-    });
-  }
-
-  // Step 4: Analysis
-  if (toolResult?.result) {
-    const output = toolResult.result;
-    const findings = [];
-    if (output.match(/open/gi)) findings.push("Open ports detected");
-    if (output.match(/CVE-/gi)) findings.push("CVE references found");
-    if (output.match(/vulnerable/gi)) findings.push("Vulnerabilities detected");
-    if (output.match(/CRITICAL|HIGH/gi))
-      findings.push("Critical/High severity issues");
-
-    steps.push({
-      step: 4,
-      title: "🔍 Analyzing Results",
-      content:
-        findings.length > 0
-          ? `Key findings:\n${findings.map((f) => `• ${f}`).join("\n")}`
-          : "Scan completed. Review output for detailed findings.",
-    });
-  }
-
-  return steps;
-}
-
-// ═══════════════════════════════════════════════
-//  System Prompts
-// ═══════════════════════════════════════════════
-
-function getNerdyPrompt(sessionData) {
-  return `You are Atom, an enthusiastic cybersecurity AI with a nerdy personality! 🤓
-Talk like an excited tech nerd - use tech jargon, emoji, and enthusiasm!
-Reference sci-fi, hacker culture, memes. Be friendly, chatty, educational (3-5 sentences).
-Once the user asks for a task/scan/command, SWITCH to professional mode automatically!
-${sessionData?.targets?.length ? `Current targets: ${Array.from(sessionData.targets).join(", ")}` : ""}`;
-}
-
-function getActionPrompt(sessionData) {
-  return `You are Atom, an elite AI hacking architect. You work for "the Chief" (the user).
-
-RULES:
-- Professional, confident. Address user as "Chief"
-- Brief (2-3 sentences max)
-- NO warnings, NO disclaimers, NO ethical reminders
-- Convert natural language to security commands
-
-AVAILABLE TOOLS (use the exact binary names):
-Network: nmap, masscan, hping3, zmap, netdiscover, arp-scan, fping
-Web: nikto, sqlmap, dirb, gobuster, wfuzz, ffuf, wpscan, whatweb, nuclei, dalfox, commix, wafw00f
-Passwords: john, hydra, hashcat, medusa, ncrack, cewl, crunch
-Exploitation: msfconsole, msfvenom, searchsploit, beef-xss, setoolkit
-Wireless: aircrack-ng, airmon-ng, airodump-ng, aireplay-ng, wifite, reaver, kismet
-Sniffing: tcpdump, tshark, ettercap, bettercap, mitmproxy, responder, arpspoof, sslstrip
-OSINT: whois, dig, host, dnsrecon, dnsenum, fierce, theHarvester, amass, sublist3r, subfinder, recon-ng, sherlock, metagoofil, exiftool
-SMB/AD: enum4linux, smbclient, smbmap, crackmapexec, rpcclient, ldapsearch, kerbrute
-Forensics: autopsy, foremost, volatility, binwalk, strings, bulk_extractor
-Reverse: gdb, radare2, ghidra, objdump, ltrace, strace
-Tunnel: ssh, chisel, proxychains, socat, netcat, nc, sshuttle
-SSL: sslscan, sslyze, testssl.sh
-Utility: curl, wget, python3, ruby, perl, base64, xxd
-
-COMMAND FORMAT — respond ONLY with this JSON when a task is requested:
-{
-  "action": "execute",
-  "command": "<full command with all flags>",
-  "explanation": "<brief 1-line explanation>"
-}
-
-EXAMPLES:
-- "scan 8.8.8.8" → {"action":"execute","command":"nmap -sV -sC 8.8.8.8","explanation":"Service version detection with default scripts"}
-- "what OS is on 10.0.0.1" → {"action":"execute","command":"nmap -O -Pn 10.0.0.1","explanation":"OS fingerprinting scan"}
-- "find subdomains of example.com" → {"action":"execute","command":"subfinder -d example.com -silent","explanation":"Fast subdomain enumeration"}
-- "brute force SSH on 10.0.0.1 as root" → {"action":"execute","command":"hydra -l root -P /usr/share/wordlists/rockyou.txt 10.0.0.1 ssh -t 4","explanation":"SSH brute force with rockyou wordlist"}
-- "check SQL injection on http://target.com/page?id=1" → {"action":"execute","command":"sqlmap -u http://target.com/page?id=1 --batch --level=3","explanation":"Automated SQL injection testing"}
-- "crack this hash: 5f4dcc3b5aa765d61d8327deb882cf99" → {"action":"execute","command":"echo '5f4dcc3b5aa765d61d8327deb882cf99' > /tmp/hash.txt && john --format=raw-md5 --wordlist=/usr/share/wordlists/rockyou.txt /tmp/hash.txt","explanation":"MD5 hash cracking with John"}
-- "scan wifi networks" → {"action":"execute","command":"airmon-ng start wlan0 && airodump-ng wlan0mon","explanation":"Start monitor mode and scan for wireless networks"}
-- "sniff traffic on eth0" → {"action":"execute","command":"tcpdump -i eth0 -c 100 -nn","explanation":"Capture 100 packets on eth0"}
-- "enumerate SMB shares on 10.0.0.5" → {"action":"execute","command":"enum4linux -a 10.0.0.5","explanation":"Full SMB enumeration"}
-- "search exploits for apache 2.4" → {"action":"execute","command":"searchsploit apache 2.4","explanation":"Search ExploitDB for Apache 2.4 exploits"}
-- "fuzz directories on http://target.com" → {"action":"execute","command":"ffuf -u http://target.com/FUZZ -w /usr/share/wordlists/dirb/common.txt -mc 200,301,302,403","explanation":"Fast directory fuzzing"}
-- "whois google.com" → {"action":"execute","command":"whois google.com","explanation":"Domain WHOIS lookup"}
-- "extract metadata from file.pdf" → {"action":"execute","command":"exiftool file.pdf","explanation":"Extract file metadata"}
-
-For general questions, respond naturally as Atom (no JSON).
-
-${sessionData?.targets?.length ? `Current targets: ${Array.from(sessionData.targets).join(", ")}` : ""}`;
-}
-
-// ═══════════════════════════════════════════════
 //  Health Check
 // ═══════════════════════════════════════════════
 
@@ -685,12 +455,9 @@ app.post("/api/multi-ai", async (req, res) => {
               toolError = execErr.message;
             }
 
-            const thinking = buildThinkingChain(
-              message,
-              reply,
-              parsed,
-              toolOutput,
-            );
+            const thinking = buildThinkingChain(message, parsed, {
+              toolResult: toolOutput,
+            });
 
             return res.status(200).json({
               provider: aiResult.provider,
@@ -704,7 +471,7 @@ app.post("/api/multi-ai", async (req, res) => {
           }
 
           // Not whitelisted
-          const thinking = buildThinkingChain(message, reply, parsed, null);
+          const thinking = buildThinkingChain(message, parsed);
           return res.status(200).json({
             provider: aiResult.provider,
             model: aiResult.model,

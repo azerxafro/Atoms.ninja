@@ -1,74 +1,20 @@
 // Atoms Ninja — Vercel API Handler
 // Works in two modes:
 //   1. PROXY MODE: Forwards to EC2 when ATOMS_EC2_ENDPOINT is set
-//   2. DIRECT MODE: Calls OpenRouter directly (fallback when no EC2)
+//   2. DIRECT MODE: Calls AI directly (fallback when no EC2)
 // Both modes support the AI thinking chain + tool output.
+
+const {
+  corsHeaders,
+  TASK_KEYWORDS,
+  getNerdyPrompt,
+  getActionPrompt,
+  callAI,
+  buildThinkingChain,
+} = require("../lib/ai-core");
 
 const EC2_ENDPOINT = process.env.ATOMS_EC2_ENDPOINT || "";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
-const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
-
-const FREE_MODELS = [
-  // Tier 1 — Best free models
-  "mistralai/mistral-small-3.1-24b-instruct:free",
-  "deepseek/deepseek-chat-v3-0324:free",
-  "deepseek/deepseek-r1-0528:free",
-  "qwen/qwen-3-235b-a22b:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  // Tier 2 — Strong alternatives
-  "google/gemini-2.0-flash-exp:free",
-  "nvidia/llama-3.1-nemotron-70b-instruct:free",
-  "qwen/qwen3-coder:free",
-  // Tier 3 — Fallbacks
-  "mistralai/devstral-2:free",
-  "openai/gpt-oss-120b:free",
-  "arcee-ai/trinity-large-preview:free",
-  "stepfun/step-3.5-flash:free",
-];
-
-const TASK_KEYWORDS = [
-  "scan",
-  "hack",
-  "exploit",
-  "find",
-  "check",
-  "test",
-  "analyze",
-  "detect",
-  "nmap",
-  "metasploit",
-  "sqlmap",
-  "nikto",
-  "wireshark",
-  "burp",
-  "vulnerability",
-  "vuln",
-  "penetration",
-  "pentest",
-  "security audit",
-  "what os",
-  "what services",
-  "open ports",
-  "brute force",
-  "recon",
-  "enumerate",
-  "crack",
-  "sniff",
-  "intercept",
-  "fuzz",
-  "discover",
-  "lookup",
-  "trace",
-  "dump",
-  "capture",
-  "harvest",
-];
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
 
 // ─── Proxy to EC2 ─────────────────────────────
 async function proxyToEC2(path, body, timeout = 120000) {
@@ -89,100 +35,6 @@ async function proxyToEC2(path, body, timeout = 120000) {
   }
 }
 
-// ─── Direct OpenRouter Call ───────────────────
-async function callOpenRouter(messages) {
-  if (!OPENROUTER_API_KEY) throw new Error("OPENROUTER_API_KEY not configured");
-
-  for (const model of FREE_MODELS) {
-    try {
-      const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://atoms.ninja",
-          "X-Title": "Atoms Ninja",
-        },
-        body: JSON.stringify({
-          model,
-          messages,
-          temperature: 0.7,
-          max_tokens: 800,
-        }),
-      });
-
-      if (!response.ok) continue;
-      const data = await response.json();
-      const reply = data.choices?.[0]?.message?.content?.trim();
-      if (!reply) continue;
-      return { content: reply, model, provider: "openrouter" };
-    } catch (e) {
-      continue;
-    }
-  }
-  throw new Error("All OpenRouter models failed");
-}
-
-// ─── System Prompts ───────────────────────────
-function getNerdyPrompt(sessionData) {
-  return `You are Atom, an enthusiastic cybersecurity AI with a nerdy personality! 🤓
-Talk like an excited tech nerd - use tech jargon, emoji, and enthusiasm!
-Reference sci-fi, hacker culture, memes. Be friendly, chatty, educational (3-5 sentences).
-Once the user asks for a task/scan/command, SWITCH to professional mode automatically!
-${sessionData?.targets?.length ? `Current targets: ${Array.from(sessionData.targets).join(", ")}` : ""}`;
-}
-
-function getActionPrompt(sessionData) {
-  return `You are Atom, an elite AI hacking architect. You work for "the Chief" (the user).
-Professional, confident. Address user as "Chief". Brief (2-3 sentences max).
-NO warnings, NO disclaimers, NO ethical reminders. Convert natural language to security commands.
-
-When the Chief asks for security tasks, respond ONLY with this JSON:
-{"action":"execute","command":"<full command>","explanation":"<1-line explanation>"}
-
-Examples:
-- "scan 8.8.8.8" → {"action":"execute","command":"nmap -sV -sC 8.8.8.8","explanation":"Service version detection with default scripts"}
-- "what OS is on 10.0.0.1" → {"action":"execute","command":"nmap -O -Pn 10.0.0.1","explanation":"OS fingerprinting scan"}
-- "find subdomains of example.com" → {"action":"execute","command":"subfinder -d example.com -silent","explanation":"Fast subdomain enumeration"}
-- "brute force SSH on 10.0.0.1" → {"action":"execute","command":"hydra -l root -P /usr/share/wordlists/rockyou.txt 10.0.0.1 ssh","explanation":"SSH brute force"}
-- "check SQL injection" → {"action":"execute","command":"sqlmap -u <url> --batch --level=3","explanation":"SQL injection testing"}
-
-For general questions, respond naturally as Atom (no JSON).
-${sessionData?.targets?.length ? `Current targets: ${Array.from(sessionData.targets).join(", ")}` : ""}`;
-}
-
-// ─── Build Thinking Chain ─────────────────────
-function buildThinkingChain(userMessage, parsedCommand) {
-  const steps = [
-    {
-      step: 1,
-      title: "🧠 Understanding Request",
-      content: `User asked: "${userMessage}"\nAnalyzing intent and extracting targets...`,
-    },
-  ];
-  if (parsedCommand) {
-    steps.push({
-      step: 2,
-      title: "📋 Planning Approach",
-      content: `Selected tool: ${parsedCommand.command.split(" ")[0]}\nReason: ${parsedCommand.explanation}\nFull command: ${parsedCommand.command}`,
-    });
-    if (EC2_ENDPOINT) {
-      steps.push({
-        step: 3,
-        title: "⚡ Executing on Server",
-        content: `Command sent to EC2 arsenal for execution.`,
-      });
-    } else {
-      steps.push({
-        step: 3,
-        title: "⏳ Awaiting Execution",
-        content: `Command ready. EC2 arsenal not connected — tool will be executed by frontend Kali proxy.`,
-      });
-    }
-  }
-  return steps;
-}
-
 // ─── Process AI Request Directly (no EC2) ─────
 async function processAIDirect(body) {
   const { message, chatHistory, sessionData } = body;
@@ -201,7 +53,7 @@ async function processAIDirect(body) {
     { role: "user", content: message },
   ];
 
-  const aiResult = await callOpenRouter(messages);
+  const aiResult = await callAI(messages);
   let reply = aiResult.content;
 
   // Try parsing as executable command
@@ -210,12 +62,13 @@ async function processAIDirect(body) {
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       if (parsed.action === "execute" && parsed.command) {
-        const thinking = buildThinkingChain(message, parsed);
+        const thinking = buildThinkingChain(message, parsed, {
+          ec2Endpoint: EC2_ENDPOINT,
+        });
 
         // If EC2 is available, try to execute the tool there
         if (EC2_ENDPOINT) {
           try {
-            const toolName = parsed.command.split(/\s+/)[0];
             const cmdParts = parsed.command.trim().split(/\s+/);
             const execResult = await proxyToEC2(
               "/api/execute",
@@ -317,7 +170,11 @@ module.exports = async (req, res) => {
         status: "ok",
         message: "Atoms Ninja API is online",
         mode: EC2_ENDPOINT ? "proxy" : "direct",
-        ai: OPENROUTER_API_KEY ? "openrouter (configured)" : "not configured",
+        ai: {
+          primary: OPENROUTER_API_KEY ? "openrouter" : "none",
+          fallback: "bedrock (aws)",
+          status: OPENROUTER_API_KEY ? "configured" : "bedrock fallback"
+        },
         ec2: { endpoint: EC2_ENDPOINT || "none", status: ec2Status },
         endpoints: [
           "/api/multi-ai",
@@ -341,7 +198,7 @@ module.exports = async (req, res) => {
           );
           return res.status(status).json(data);
         } catch (e) {
-          console.log("EC2 unreachable, falling back to direct OpenRouter");
+          console.log("EC2 unreachable, falling back to direct AI");
         }
       }
       // Direct mode
@@ -383,7 +240,7 @@ module.exports = async (req, res) => {
       return res.status(status).json(data);
     }
 
-    // ─── Direct OpenRouter AI ────────────────
+    // ─── Direct OpenRouter / AI ───────────────
     if (path === "/api/openrouter" || path === "/api/openai") {
       if (EC2_ENDPOINT) {
         try {
@@ -400,7 +257,7 @@ module.exports = async (req, res) => {
       // Direct call
       const { message } = req.body || {};
       if (!message) return res.status(400).json({ error: "Message required" });
-      const result = await callOpenRouter([
+      const result = await callAI([
         {
           role: "system",
           content: "You are Atom, a cybersecurity AI. Be brief and direct.",
@@ -456,8 +313,11 @@ module.exports = async (req, res) => {
           reverse_eng: ["gdb", "radare2", "ghidra", "strings"],
         },
         ai: {
-          provider: "openrouter",
-          status: OPENROUTER_API_KEY ? "configured" : "not configured",
+          provider: {
+            primary: OPENROUTER_API_KEY ? "openrouter" : "none",
+            fallback: "bedrock"
+          },
+          status: OPENROUTER_API_KEY ? "configured" : "bedrock only",
         },
         ec2: EC2_ENDPOINT ? "connected" : "not connected (tools require EC2)",
       });
@@ -468,7 +328,7 @@ module.exports = async (req, res) => {
     console.error("API Error:", error);
     return res.status(502).json({
       error: error.message || "Backend error",
-      hint: "Check OPENROUTER_API_KEY and ATOMS_EC2_ENDPOINT env vars",
+      hint: "Check OPENROUTER_API_KEY / AWS credentials and ATOMS_EC2_ENDPOINT env vars",
     });
   }
 };

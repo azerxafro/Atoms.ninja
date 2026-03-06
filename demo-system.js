@@ -72,10 +72,11 @@ async function demonstrateSystemCapabilities() {
     // 2. Backend Server Configuration
     section('2️⃣  Backend Server Configuration');
     
-    log(`   ✅ Server file: gemini-proxy.js`, 'green');
+    log(`   ✅ Server file: atoms-server.js`, 'green');
     log(`   📡 Default port: 3001`, 'blue');
-    log(`   🔗 API endpoint: /api/gemini`, 'blue');
+    log(`   🔗 API endpoint: /api/multi-ai`, 'blue');
     log(`   🛡️  MCP proxy: /api/kali/*`, 'blue');
+    log(`   🧠 AI Core: lib/ai-core.js (OpenRouter + Bedrock)`, 'blue');
     log(`   💡 Status: Configured to handle requests`, 'green');
     
     // 3. MCP Server Configuration
