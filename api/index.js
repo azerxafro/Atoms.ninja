@@ -6,6 +6,8 @@
 
 const {
   corsHeaders,
+  getCorsHeaders,
+  ALLOWED_ORIGINS,
   TASK_KEYWORDS,
   getNerdyPrompt,
   getActionPrompt,
@@ -15,6 +17,14 @@ const {
 
 const EC2_ENDPOINT = process.env.ATOMS_EC2_ENDPOINT || "";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
+
+// ─── Discord OAuth2 Config ────────────────────
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || "";
+const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || "";
+const DISCORD_REDIRECT_URI =
+  process.env.DISCORD_REDIRECT_URI ||
+  "https://www.atoms.ninja/api/auth/discord/callback";
+const DISCORD_SCOPES = "identify email";
 
 // ─── Proxy to EC2 ─────────────────────────────
 async function proxyToEC2(path, body, timeout = 120000) {
@@ -33,6 +43,50 @@ async function proxyToEC2(path, body, timeout = 120000) {
     clearTimeout(timer);
     throw error;
   }
+}
+
+// ─── Discord OAuth2 Helpers ───────────────────
+function generateState() {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let state = "";
+  for (let i = 0; i < 32; i++) {
+    state += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return state;
+}
+
+async function exchangeCodeForToken(code) {
+  const params = new URLSearchParams({
+    client_id: DISCORD_CLIENT_ID,
+    client_secret: DISCORD_CLIENT_SECRET,
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: DISCORD_REDIRECT_URI,
+  });
+
+  const response = await fetch("https://discord.com/api/oauth2/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString(),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Discord token exchange failed: ${err}`);
+  }
+  return response.json();
+}
+
+async function fetchDiscordUser(accessToken) {
+  const response = await fetch("https://discord.com/api/v10/users/@me", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch Discord user");
+  }
+  return response.json();
 }
 
 // ─── Process AI Request Directly (no EC2) ─────
@@ -146,12 +200,116 @@ async function processAIDirect(body) {
 // ═══════════════════════════════════════════════
 
 module.exports = async (req, res) => {
-  Object.entries(corsHeaders).forEach(([k, v]) => res.setHeader(k, v));
+  // Use dynamic CORS headers based on requesting origin
+  const origin = req.headers.origin;
+  const headers = getCorsHeaders(origin || "");
+  Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
   if (req.method === "OPTIONS") return res.status(200).json({});
 
-  const path = req.url.split("?")[0];
+  const url = new URL(req.url, `https://${req.headers.host || "localhost"}`);
+  const path = url.pathname;
 
   try {
+    // ─── Discord OAuth: Redirect ─────────────
+    if (path === "/api/auth/discord") {
+      if (!DISCORD_CLIENT_ID) {
+        return res.status(500).json({ error: "Discord OAuth not configured" });
+      }
+      const state = generateState();
+      const params = new URLSearchParams({
+        client_id: DISCORD_CLIENT_ID,
+        redirect_uri: DISCORD_REDIRECT_URI,
+        response_type: "code",
+        scope: DISCORD_SCOPES,
+        state,
+        prompt: "consent",
+      });
+      res.setHeader(
+        "Location",
+        `https://discord.com/oauth2/authorize?${params}`,
+      );
+      return res.status(302).end();
+    }
+
+    // ─── Discord OAuth: Callback ─────────────
+    if (path === "/api/auth/discord/callback") {
+      const code = url.searchParams.get("code");
+      const error = url.searchParams.get("error");
+
+      if (error || !code) {
+        const frontendUrl = origin || "https://www.atoms.ninja";
+        res.setHeader(
+          "Location",
+          `${frontendUrl}?auth_error=${encodeURIComponent(error || "no_code")}`,
+        );
+        return res.status(302).end();
+      }
+
+      try {
+        const tokenData = await exchangeCodeForToken(code);
+        const user = await fetchDiscordUser(tokenData.access_token);
+
+        // Build avatar URL
+        const avatarUrl = user.avatar
+          ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${user.avatar.startsWith("a_") ? "gif" : "png"}?size=128`
+          : `https://cdn.discordapp.com/embed/avatars/${(BigInt(user.id) >> 22n) % 6n}.png`;
+
+        const userData = {
+          id: user.id,
+          username: user.username,
+          globalName: user.global_name || user.username,
+          avatar: avatarUrl,
+          email: user.email || null,
+          accessToken: tokenData.access_token,
+          expiresAt: Date.now() + tokenData.expires_in * 1000,
+        };
+
+        const frontendUrl = origin || "https://www.atoms.ninja";
+        const encodedData = encodeURIComponent(
+          Buffer.from(JSON.stringify(userData)).toString("base64"),
+        );
+        res.setHeader("Location", `${frontendUrl}?discord_auth=${encodedData}`);
+        return res.status(302).end();
+      } catch (err) {
+        console.error("Discord OAuth callback error:", err);
+        const frontendUrl = origin || "https://www.atoms.ninja";
+        res.setHeader(
+          "Location",
+          `${frontendUrl}?auth_error=${encodeURIComponent("token_exchange_failed")}`,
+        );
+        return res.status(302).end();
+      }
+    }
+
+    // ─── Discord OAuth: Validate Session ─────
+    if (path === "/api/auth/me") {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "No token provided" });
+      }
+      const token = authHeader.split(" ")[1];
+      try {
+        const user = await fetchDiscordUser(token);
+        const avatarUrl = user.avatar
+          ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${user.avatar.startsWith("a_") ? "gif" : "png"}?size=128`
+          : `https://cdn.discordapp.com/embed/avatars/${(BigInt(user.id) >> 22n) % 6n}.png`;
+        return res.status(200).json({
+          authenticated: true,
+          user: {
+            id: user.id,
+            username: user.username,
+            globalName: user.global_name || user.username,
+            avatar: avatarUrl,
+            email: user.email || null,
+          },
+        });
+      } catch (err) {
+        return res
+          .status(401)
+          .json({ authenticated: false, error: "Invalid or expired token" });
+      }
+    }
+
     // ─── Health ──────────────────────────────
     if (path === "/api" || path === "/api/health") {
       let ec2Status = "not configured";
@@ -173,7 +331,7 @@ module.exports = async (req, res) => {
         ai: {
           primary: OPENROUTER_API_KEY ? "openrouter" : "none",
           fallback: "bedrock (aws)",
-          status: OPENROUTER_API_KEY ? "configured" : "bedrock fallback"
+          status: OPENROUTER_API_KEY ? "configured" : "bedrock fallback",
         },
         ec2: { endpoint: EC2_ENDPOINT || "none", status: ec2Status },
         endpoints: [
@@ -315,7 +473,7 @@ module.exports = async (req, res) => {
         ai: {
           provider: {
             primary: OPENROUTER_API_KEY ? "openrouter" : "none",
-            fallback: "bedrock"
+            fallback: "bedrock",
           },
           status: OPENROUTER_API_KEY ? "configured" : "bedrock only",
         },

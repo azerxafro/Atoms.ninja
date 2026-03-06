@@ -14,8 +14,10 @@ const express = require("express");
 const cors = require("cors");
 const { spawn } = require("child_process");
 const rateLimit = require("express-rate-limit");
-
+const { ALLOWED_ORIGINS: sharedOrigins } = require("./shared-config.js");
 const {
+  ALLOWED_ORIGINS,
+  getCorsHeaders,
   TASK_KEYWORDS,
   getNerdyPrompt,
   getActionPrompt,
@@ -290,12 +292,23 @@ const TOOL_TIMEOUTS = {
 
 app.use(
   cors({
-    origin: "*",
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      // Use shared getCorsHeaders to validate origin
+      const headers = getCorsHeaders(origin);
+      if (headers["Access-Control-Allow-Origin"] !== "null") {
+        callback(null, true);
+      } else {
+        callback(null, false); // Reject origin without throwing error
+      }
+    },
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
-app.use(express.json({ limit: "50mb" }));
+app.use(express.json({ limit: "10mb" }));
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,

@@ -23,6 +23,124 @@ document.addEventListener("DOMContentLoaded", function () {
     AI_MODE: "fast", // fast | accurate | stealth
   };
 
+  // ═══════════════════════════════════════════════
+  //  Discord Auth — Sign in with Discord
+  // ═══════════════════════════════════════════════
+
+  function initDiscordAuth() {
+    handleAuthCallback();
+    validateSession();
+
+    // Sign out handler
+    const signOutBtn = document.getElementById("signOutBtn");
+    if (signOutBtn) {
+      signOutBtn.addEventListener("click", signOut);
+    }
+  }
+
+  function handleAuthCallback() {
+    const params = new URLSearchParams(window.location.search);
+
+    // Check for auth data from callback redirect
+    const authData = params.get("discord_auth");
+    if (authData) {
+      try {
+        const userData = JSON.parse(atob(decodeURIComponent(authData)));
+        localStorage.setItem("discord_user", JSON.stringify(userData));
+        updateAuthUI(userData);
+        // Clean the URL
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname,
+        );
+        return;
+      } catch (e) {
+        console.error("Failed to parse auth data:", e);
+      }
+    }
+
+    // Check for auth error
+    const authError = params.get("auth_error");
+    if (authError) {
+      console.error("Discord auth error:", authError);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }
+
+  async function validateSession() {
+    const stored = localStorage.getItem("discord_user");
+    if (!stored) return;
+
+    try {
+      const userData = JSON.parse(stored);
+
+      // Check if token expired
+      if (userData.expiresAt && Date.now() > userData.expiresAt) {
+        signOut();
+        return;
+      }
+
+      // Validate token with backend
+      const response = await fetch("/api/auth/me", {
+        headers: { Authorization: `Bearer ${userData.accessToken}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.authenticated) {
+          // Update user info with fresh data
+          userData.username = data.user.username;
+          userData.globalName = data.user.globalName;
+          userData.avatar = data.user.avatar;
+          localStorage.setItem("discord_user", JSON.stringify(userData));
+          updateAuthUI(userData);
+          return;
+        }
+      }
+      // Token invalid
+      signOut();
+    } catch (e) {
+      // Network error — use cached data if available
+      try {
+        const userData = JSON.parse(stored);
+        if (userData.expiresAt && Date.now() < userData.expiresAt) {
+          updateAuthUI(userData);
+        }
+      } catch (e2) {
+        signOut();
+      }
+    }
+  }
+
+  function updateAuthUI(userData) {
+    const loginBtn = document.getElementById("discordLoginBtn");
+    const profileDiv = document.getElementById("userProfile");
+    const avatarImg = document.getElementById("userAvatar");
+    const nameSpan = document.getElementById("userName");
+
+    if (userData) {
+      // Logged in
+      if (loginBtn) loginBtn.style.display = "none";
+      if (profileDiv) profileDiv.style.display = "flex";
+      if (avatarImg) avatarImg.src = userData.avatar;
+      if (nameSpan)
+        nameSpan.textContent = userData.globalName || userData.username;
+    } else {
+      // Logged out
+      if (loginBtn) loginBtn.style.display = "flex";
+      if (profileDiv) profileDiv.style.display = "none";
+    }
+  }
+
+  function signOut() {
+    localStorage.removeItem("discord_user");
+    updateAuthUI(null);
+  }
+
+  // Initialize auth
+  initDiscordAuth();
+
   // Enhanced Session Manager with persistence
   class SessionManager {
     constructor() {
@@ -217,7 +335,18 @@ document.addEventListener("DOMContentLoaded", function () {
       tool: tool,
       target: target,
       result: result.substring(0, 500), // Store first 500 chars
-      hash: btoa(tool + target + Date.now()), // Unique ID
+      hash:
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : (function () {
+              try {
+                return btoa(encodeURIComponent(tool + target + Date.now()));
+              } catch (e) {
+                return (
+                  Date.now().toString(36) + Math.random().toString(36).substr(2)
+                );
+              }
+            })(), // Unique ID - with fallback for HTTP
     };
 
     currentSession.findings.push(finding);
@@ -1003,17 +1132,19 @@ INSTRUCTIONS:
       }
 
       // Show AI metadata
-      const ninjaRank = data.provider === 'openrouter' ? 'Ninja Shinobi' : data.provider === 'bedrock' ? 'Ninja Jōnin' : 'Ninja';
+      const ninjaRank =
+        data.provider === "openrouter"
+          ? "Ninja Shinobi"
+          : data.provider === "bedrock"
+            ? "Ninja Jōnin"
+            : "Ninja";
       if (data.consensus) {
         addTerminalLine(
           `🎯 Consensus response (${data.confidence}% confidence, ${ninjaRank})`,
           "success",
         );
       } else {
-        addTerminalLine(
-          `🤖 ${ninjaRank} responds...`,
-          "info",
-        );
+        addTerminalLine(`🤖 ${ninjaRank} responds...`, "info");
       }
 
       // If backend already executed the tool and returned output, show it directly

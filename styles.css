@@ -1127,3 +1127,107 @@ html {
   padding-left: 8px;
   border-left: 2px solid rgba(0, 255, 0, 0.2);
 }
+
+/* ═══════════════════════════════════════════════
+   Discord Auth Styles
+   ═══════════════════════════════════════════════ */
+
+.discord-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #5865f2;
+  color: #ffffff;
+  border: 2px solid #5865f2;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-shadow: none;
+}
+
+.discord-btn:hover {
+  background: #4752c4;
+  border-color: #7289da;
+  box-shadow:
+    0 0 15px rgba(88, 101, 242, 0.6),
+    0 0 30px rgba(88, 101, 242, 0.3);
+  transform: translateY(-2px);
+  color: #ffffff;
+}
+
+.discord-btn .discord-icon {
+  width: 20px;
+  height: 20px;
+  filter: none;
+}
+
+/* User Profile (logged in) */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-neon-green);
+  border-radius: 4px;
+  box-shadow: 0 0 8px rgba(0, 255, 0, 0.2);
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--color-neon-green);
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+.user-name {
+  color: var(--color-neon-green);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: "Courier New", monospace;
+  text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-signout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid rgba(255, 0, 0, 0.4);
+  border-radius: 4px;
+  color: #ff4444;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-shadow: none;
+}
+
+.btn-signout:hover {
+  background: rgba(255, 0, 0, 0.1);
+  border-color: #ff4444;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+  color: #ff6666;
+}
+
+.btn-signout svg {
+  filter: none;
+}
