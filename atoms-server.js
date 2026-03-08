@@ -24,6 +24,7 @@ const {
   callAI,
   buildThinkingChain,
 } = require("./lib/ai-core");
+const { initAdminSdk, listDomainUsers } = require("./lib/google-admin");
 
 // Backward-compat alias (used in /api/openrouter route below)
 const callOpenRouter = (messages, model) =>
@@ -394,6 +395,29 @@ async function executeTool(command, args, options = {}) {
     });
   });
 }
+
+// ═══════════════════════════════════════════════
+//  Google Admin Integration (Internal/Protected)
+// ═══════════════════════════════════════════════
+
+// Initialize the Admin SDK on startup (non-blocking)
+initAdminSdk("ashwinazer@gmail.com").catch((err) => {
+  console.warn(
+    "[Google Admin] Startup initialization skipped/failed. Ensure GOOGLE_APPLICATION_CREDENTIALS is set if Admin features are needed.",
+  );
+});
+
+// Example internal endpoint to verify Admin SDK access.
+// IMPORTANT: This should be protected by authentication in a real production scenario
+// to prevent unauthorized access.
+app.get("/api/internal/admin/users", async (req, res) => {
+  try {
+    const users = await listDomainUsers();
+    res.json({ success: true, count: users.length, users });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // ═══════════════════════════════════════════════
 //  Health Check
