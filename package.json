@@ -12,7 +12,11 @@
     "test:full": "node atoms-server.js & sleep 3 && node test-api-and-mcp.js",
     "test:api": "node test-api-and-mcp.js",
     "validate": "node validate-config.js",
-    "demo": "node demo-system.js"
+    "demo": "node demo-system.js",
+    "fetch-ips": "bash scripts/fetch-ip-ranges.sh",
+    "secure-sg": "bash scripts/update-security-group.sh",
+    "setup-waf": "bash scripts/setup-aws-waf.sh",
+    "audit-ips": "bash scripts/fetch-ip-ranges.sh && cat ip-attribution.json"
   },
   "keywords": [
     "openrouter",

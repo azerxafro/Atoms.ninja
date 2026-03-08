@@ -1,0 +1,51 @@
+{
+  "_metadata": {
+    "description": "Atoms Ninja IP Attribution Configuration",
+    "last_updated": "POPULATE — run: npm run fetch-ips",
+    "update_command": "npm run fetch-ips",
+    "apply_command": "npm run secure-sg -- --apply",
+    "sources": {
+      "vercel": "https://ipx.vercel.sh/",
+      "aws": "https://ip-ranges.amazonaws.com/ip-ranges.json"
+    }
+  },
+  "vercel": {
+    "description": "Vercel serverless function egress IPs (dynamic — update weekly)",
+    "update_frequency": "weekly",
+    "ipv4_ranges": []
+  },
+  "aws_ec2_us_east_1": {
+    "description": "AWS EC2 public IP ranges in us-east-1",
+    "update_frequency": "weekly",
+    "ipv4_ranges": [],
+    "ipv6_ranges": []
+  },
+  "static_infrastructure": {
+    "ec2_elastic_ip": "34.202.47.138/32",
+    "gcp_kali_vm_ip": "136.113.58.241/32",
+    "note": "These are static IPs — update only if instances are replaced"
+  },
+  "admin": {
+    "description": "Admin operator IP — SSH access to EC2",
+    "ssh_source_ip": "YOUR_ADMIN_IP/32",
+    "note": "REQUIRED: Replace YOUR_ADMIN_IP/32 with your actual admin CIDR before running secure-sg"
+  },
+  "government": {
+    "description": "Tamil Nadu Government / Police network CIDRs",
+    "note": "Add Tamil Nadu Police and authorized government network CIDRs here. These will be granted access to port 3001 (Kali MCP API).",
+    "ipv4_ranges": [
+      "# PLACEHOLDER — Add Tamil Nadu Police network CIDRs here",
+      "# Example: 203.0.113.0/24"
+    ]
+  },
+  "security_group": {
+    "sg_id": "sg-0047128872be65558",
+    "region": "us-east-1",
+    "rules": {
+      "ssh_22": "admin.ssh_source_ip only",
+      "http_80": "0.0.0.0/0 (redirect to HTTPS)",
+      "https_443": "0.0.0.0/0 (public API)",
+      "api_3001": "vercel.ipv4_ranges + government.ipv4_ranges only"
+    }
+  }
+}
