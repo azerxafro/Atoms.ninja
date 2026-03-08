@@ -74,7 +74,7 @@ The platform is built on a high-availability, secure three-tier architecture:
 
 ```mermaid
 graph TD
-    A[Terminal Interface (Vercel)] -->|Secure API| B[Orchestration Layer (Vercel Proxy)]
+    A["Terminal Interface - Vercel"] -->|Secure API| B["Orchestration Layer - Vercel Proxy"]
     B -->|AI Analysis| C[Google Gemini API]
     B -->|Tool Execution| D[GCP Kali Linux VM]
     D -->|500+ Tools| E[Target Infrastructure]
