@@ -1,10 +1,17 @@
-// Atoms Ninja - Configuration
+// Atoms Ninja - Configuration (Dynamic)
 const CONFIG = {
-  // Backend API - Always use www.atoms.ninja
-  BACKEND_API_URL: "https://www.atoms.ninja/api",
+  // Dynamic Backend API — uses the current origin so both www and beta work
+  BACKEND_API_URL:
+    (typeof window !== "undefined" ? window.location.origin : "") + "/api",
 
-  // Kali Linux MCP Server - Always use www.atoms.ninja proxy
-  KALI_MCP_ENDPOINT: "https://www.atoms.ninja/api/kali",
+  // Kali Linux MCP Server — uses the current origin proxy
+  KALI_MCP_ENDPOINT:
+    (typeof window !== "undefined" ? window.location.origin : "") + "/api/kali",
+
+  // Beta Mode detection
+  IS_BETA:
+    typeof window !== "undefined" &&
+    window.location.hostname === "beta.atoms.ninja",
 
   // GCP Configuration
   GCP: {

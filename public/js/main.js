@@ -684,6 +684,28 @@ function initArsenal() {
     });
   }
 
+  // ─── Beta Mode Toggle ──────────────────────────
+  const betaToggle = document.getElementById("betaModeToggle");
+  const isBeta = typeof CONFIG !== "undefined" && CONFIG.IS_BETA;
+
+  if (betaToggle) {
+    betaToggle.checked = isBeta;
+    betaToggle.addEventListener("change", (e) => {
+      const targetDomain = e.target.checked
+        ? "https://beta.atoms.ninja"
+        : "https://www.atoms.ninja";
+      // Cookie travels with the redirect (same .atoms.ninja domain)
+      window.location.href = targetDomain + window.location.pathname;
+    });
+  }
+
+  // Hide beta-only features on production
+  if (!isBeta) {
+    document.querySelectorAll("[data-beta-only]").forEach((el) => {
+      el.style.display = "none";
+    });
+  }
+
   // Show Arsenal only if authenticated
   if (isAuth) {
     if (originalTerminal) originalTerminal.style.display = "none";

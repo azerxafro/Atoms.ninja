@@ -30,24 +30,46 @@ function isAuthenticated() {
   }
 }
 
+// Check cookie-based session (async, used as fallback)
+async function checkCookieSession() {
+  try {
+    const res = await fetch("/api/auth/session", { credentials: "include" });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.user) {
+        // Hydrate localStorage from cookie for fast access
+        localStorage.setItem("discord_user", JSON.stringify(data.user));
+        return data.user;
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
 function initDiscordAuth() {
   // Handle OAuth callback first (before splash)
   handleAuthCallback();
 
   // Run splash animation
-  playSplashAnimation(() => {
+  playSplashAnimation(async () => {
     const splash = document.getElementById("splashScreen");
     splash.classList.add("fade-out");
 
-    setTimeout(() => {
+    setTimeout(async () => {
       splash.style.display = "none";
 
       if (isAuthenticated()) {
-        // Authenticated → show main app
+        // Authenticated via localStorage → show main app
         showMainApp();
       } else {
-        // Not authenticated → show login gate
-        showLoginGate();
+        // Try cookie-based session (cross-subdomain)
+        const cookieUser = await checkCookieSession();
+        if (cookieUser) {
+          showMainApp();
+        } else {
+          // Not authenticated → show login gate
+          showLoginGate();
+        }
       }
     }, 800);
   });
@@ -279,8 +301,12 @@ function updateAuthUI(userData) {
   }
 }
 
-function signOut() {
+async function signOut() {
   localStorage.removeItem("discord_user");
+  // Clear cross-subdomain cookie
+  try {
+    await fetch("/api/auth/signout", { credentials: "include" });
+  } catch (e) {}
   updateAuthUI(null);
   // Show login gate again
   document.getElementById("mainApp").style.display = "none";

@@ -1,7 +1,16 @@
 /**
  * Beta API - Self-Training Lab System
  * Handles MCP server requests, lab sandbox, and training sessions
+ * Gated by ENABLE_BETA_FEATURES env var
  */
+
+if (process.env.ENABLE_BETA_FEATURES !== "true") {
+  module.exports = (req, res) =>
+    res
+      .status(404)
+      .json({ error: "Beta features are not enabled on this deployment" });
+  return;
+}
 
 let labSandbox;
 let mcpServers;

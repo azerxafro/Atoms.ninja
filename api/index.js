@@ -26,8 +26,31 @@ const DISCORD_CLIENT_ID =
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || "";
 const DISCORD_REDIRECT_URI =
   process.env.DISCORD_REDIRECT_URI ||
-  "https://beta.atoms.ninja/api/auth/discord/callback";
+  "https://www.atoms.ninja/api/auth/discord/callback";
 const DISCORD_SCOPES = "identify email connections guilds";
+
+// ─── Cookie Helpers ───────────────────────────
+function parseCookies(cookieHeader) {
+  const cookies = {};
+  if (!cookieHeader) return cookies;
+  cookieHeader.split(";").forEach((pair) => {
+    const [name, ...rest] = pair.trim().split("=");
+    if (name) cookies[name] = rest.join("=");
+  });
+  return cookies;
+}
+
+function setAuthCookie(res, encodedData) {
+  res.setHeader("Set-Cookie", [
+    `atoms_auth=${encodedData}; Domain=.atoms.ninja; Path=/; Secure; SameSite=Lax; Max-Age=604800`,
+  ]);
+}
+
+function clearAuthCookie(res) {
+  res.setHeader("Set-Cookie", [
+    `atoms_auth=; Domain=.atoms.ninja; Path=/; Secure; SameSite=Lax; Max-Age=0`,
+  ]);
+}
 
 // ─── Proxy to EC2 ─────────────────────────────
 async function proxyToEC2(path, body, timeout = 120000) {
@@ -240,9 +263,10 @@ module.exports = async (req, res) => {
     if (path === "/api/auth/discord/callback") {
       const code = url.searchParams.get("code");
       const error = url.searchParams.get("error");
+      // Redirect to whichever host the user came from
+      const frontendUrl = `https://${req.headers.host || "www.atoms.ninja"}`;
 
       if (error || !code) {
-        const frontendUrl = origin || "https://www.atoms.ninja";
         res.setHeader(
           "Location",
           `${frontendUrl}?auth_error=${encodeURIComponent(error || "no_code")}`,
@@ -269,21 +293,54 @@ module.exports = async (req, res) => {
           expiresAt: Date.now() + tokenData.expires_in * 1000,
         };
 
-        const frontendUrl = origin || "https://www.atoms.ninja";
         const encodedData = encodeURIComponent(
           Buffer.from(JSON.stringify(userData)).toString("base64"),
         );
+
+        // Set cross-subdomain cookie (Domain=.atoms.ninja)
+        setAuthCookie(res, encodedData);
+
+        // Also pass via query param for backwards-compatible localStorage hydration
         res.setHeader("Location", `${frontendUrl}?discord_auth=${encodedData}`);
         return res.status(302).end();
       } catch (err) {
         console.error("Discord OAuth callback error:", err);
-        const frontendUrl = origin || "https://www.atoms.ninja";
         res.setHeader(
           "Location",
           `${frontendUrl}?auth_error=${encodeURIComponent("token_exchange_failed")}`,
         );
         return res.status(302).end();
       }
+    }
+
+    // ─── Auth Session (cookie-based) ──────────
+    if (path === "/api/auth/session") {
+      const cookies = parseCookies(req.headers.cookie || "");
+      const authCookie = cookies["atoms_auth"];
+      if (!authCookie) {
+        return res
+          .status(401)
+          .json({ authenticated: false, error: "No session" });
+      }
+      try {
+        const userData = JSON.parse(
+          Buffer.from(decodeURIComponent(authCookie), "base64").toString(),
+        );
+        // Validate token is still valid with Discord
+        const user = await fetchDiscordUser(userData.accessToken);
+        return res.json({ authenticated: true, user: userData });
+      } catch (e) {
+        clearAuthCookie(res);
+        return res
+          .status(401)
+          .json({ authenticated: false, error: "Session expired" });
+      }
+    }
+
+    // ─── Auth Sign Out ────────────────────────
+    if (path === "/api/auth/signout") {
+      clearAuthCookie(res);
+      return res.json({ success: true, message: "Signed out" });
     }
 
     // ─── Discord OAuth: Validate Session ─────

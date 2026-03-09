@@ -6,6 +6,10 @@
       "use": "@vercel/node"
     },
     {
+      "src": "api/beta.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "index.html",
       "use": "@vercel/static"
     },
@@ -39,6 +43,21 @@
     }
   ],
   "routes": [
+    {
+      "src": "/api/beta/(.*)",
+      "methods": [
+        "GET",
+        "POST",
+        "OPTIONS"
+      ],
+      "dest": "/api/beta.js",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Max-Age": "86400"
+      }
+    },
     {
       "src": "/api/(.*)",
       "methods": [
