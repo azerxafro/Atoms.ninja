@@ -50,6 +50,7 @@ fi
 
 SG_ID=$(jq -r '.security_group.sg_id' "$CONFIG_FILE")
 REGION=$(jq -r '.security_group.region' "$CONFIG_FILE")
+ENFORCE_WHITELIST=$(jq -r '.security_group.enforce_whitelisting // true' "$CONFIG_FILE")
 ADMIN_IP=$(jq -r '.admin.ssh_source_ip' "$CONFIG_FILE")
 
 # Validate admin IP is set
@@ -66,6 +67,7 @@ mapfile -t GOVT_RANGES < <(jq -r '.government.ipv4_ranges[]' "$CONFIG_FILE" 2>/d
 echo "📋 Configuration:"
 echo "   Security Group:  $SG_ID ($REGION)"
 echo "   Admin SSH IP:    $ADMIN_IP"
+echo "   Enforce WL:      $ENFORCE_WHITELIST"
 echo "   Vercel ranges:   ${#VERCEL_RANGES[@]}"
 echo "   Govt ranges:     ${#GOVT_RANGES[@]}"
 echo ""
@@ -107,9 +109,13 @@ revoke_rule "SSH (22) from 0.0.0.0/0" \
   "aws ec2 revoke-security-group-ingress --region '$REGION' --group-id '$SG_ID' \
    --protocol tcp --port 22 --cidr 0.0.0.0/0"
 
-revoke_rule "Port 3001 from 0.0.0.0/0" \
-  "aws ec2 revoke-security-group-ingress --region '$REGION' --group-id '$SG_ID' \
-   --protocol tcp --port 3001 --cidr 0.0.0.0/0"
+if [ "$ENFORCE_WHITELIST" = "true" ]; then
+  revoke_rule "Port 3001 from 0.0.0.0/0" \
+    "aws ec2 revoke-security-group-ingress --region '$REGION' --group-id '$SG_ID' \
+     --protocol tcp --port 3001 --cidr 0.0.0.0/0"
+else
+  echo "   [SKIP] Whitelisting is OPTIONAL. Not revoking Port 3001 from 0.0.0.0/0."
+fi
 
 revoke_rule "SSH (22) from ::/0 (IPv6)" \
   "aws ec2 revoke-security-group-ingress --region '$REGION' --group-id '$SG_ID' \
@@ -129,32 +135,43 @@ apply_rule "SSH (22) from $ADMIN_IP" \
    --tag-specifications 'ResourceType=security-group-rule,Tags=[{Key=Name,Value=atoms-ninja-admin-ssh},{Key=ManagedBy,Value=atoms-ninja-ip-config}]'"
 echo ""
 
-# ── Step 3: Allow port 3001 from Vercel ranges ───────────────────────
-echo "🌐 Step 3: Port 3001 — Vercel serverless ranges (${#VERCEL_RANGES[@]} CIDRs)..."
-if [ ${#VERCEL_RANGES[@]} -eq 0 ]; then
-  echo "   ⚠️  No Vercel ranges found. Run 'npm run fetch-ips' to populate ip-attribution.json"
-else
-  for cidr in "${VERCEL_RANGES[@]}"; do
-    apply_rule "Port 3001 from Vercel $cidr" \
-      "aws ec2 authorize-security-group-ingress --region '$REGION' --group-id '$SG_ID' \
-       --protocol tcp --port 3001 --cidr '$cidr' \
-       --tag-specifications 'ResourceType=security-group-rule,Tags=[{Key=Name,Value=atoms-ninja-vercel-api},{Key=Source,Value=vercel},{Key=ManagedBy,Value=atoms-ninja-ip-config}]'"
-  done
-fi
 echo ""
 
-# ── Step 4: Allow port 3001 from government IPs ──────────────────────
-if [ ${#GOVT_RANGES[@]} -gt 0 ]; then
-  echo "🏛️  Step 4: Port 3001 — Government / Police network ranges (${#GOVT_RANGES[@]} CIDRs)..."
-  for cidr in "${GOVT_RANGES[@]}"; do
-    apply_rule "Port 3001 from Govt $cidr" \
-      "aws ec2 authorize-security-group-ingress --region '$REGION' --group-id '$SG_ID' \
-       --protocol tcp --port 3001 --cidr '$cidr' \
-       --tag-specifications 'ResourceType=security-group-rule,Tags=[{Key=Name,Value=atoms-ninja-govt},{Key=Source,Value=government},{Key=ManagedBy,Value=atoms-ninja-ip-config}]'"
-  done
+if [ "$ENFORCE_WHITELIST" = "true" ]; then
+  # ── Step 3: Allow port 3001 from Vercel ranges ───────────────────────
+  echo "🌐 Step 3: Port 3001 — Vercel serverless ranges (${#VERCEL_RANGES[@]} CIDRs)..."
+  if [ ${#VERCEL_RANGES[@]} -eq 0 ]; then
+    echo "   ⚠️  No Vercel ranges found. Run 'npm run fetch-ips' to populate ip-attribution.json"
+  else
+    for cidr in "${VERCEL_RANGES[@]}"; do
+      apply_rule "Port 3001 from Vercel $cidr" \
+        "aws ec2 authorize-security-group-ingress --region '$REGION' --group-id '$SG_ID' \
+         --protocol tcp --port 3001 --cidr '$cidr' \
+         --tag-specifications 'ResourceType=security-group-rule,Tags=[{Key=Name,Value=atoms-ninja-vercel-api},{Key=Source,Value=vercel},{Key=ManagedBy,Value=atoms-ninja-ip-config}]'"
+    done
+  fi
   echo ""
+
+  # ── Step 4: Allow port 3001 from government IPs ──────────────────────
+  if [ ${#GOVT_RANGES[@]} -gt 0 ]; then
+    echo "🏛️  Step 4: Port 3001 — Government / Police network ranges (${#GOVT_RANGES[@]} CIDRs)..."
+    for cidr in "${GOVT_RANGES[@]}"; do
+      apply_rule "Port 3001 from Govt $cidr" \
+        "aws ec2 authorize-security-group-ingress --region '$REGION' --group-id '$SG_ID' \
+         --protocol tcp --port 3001 --cidr '$cidr' \
+         --tag-specifications 'ResourceType=security-group-rule,Tags=[{Key=Name,Value=atoms-ninja-govt},{Key=Source,Value=government},{Key=ManagedBy,Value=atoms-ninja-ip-config}]'"
+    done
+    echo ""
+  else
+    echo "ℹ️  Step 4: No government IPs configured (add to ip-attribution.json when available)"
+    echo ""
+  fi
 else
-  echo "ℹ️  Step 4: No government IPs configured (add to ip-attribution.json when available)"
+  echo "🔓 Step 3 & 4: Whitelisting is disabled. Allowing Port 3001 from 0.0.0.0/0..."
+  apply_rule "Port 3001 from 0.0.0.0/0 (Whitelisting Disabled)" \
+    "aws ec2 authorize-security-group-ingress --region '$REGION' --group-id '$SG_ID' \
+     --protocol tcp --port 3001 --cidr 0.0.0.0/0 \
+     --tag-specifications 'ResourceType=security-group-rule,Tags=[{Key=Name,Value=atoms-ninja-api-public},{Key=ManagedBy,Value=atoms-ninja-ip-config}]'"
   echo ""
 fi
 
