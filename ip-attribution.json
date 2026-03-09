@@ -33,9 +33,12 @@
   "government": {
     "description": "Tamil Nadu Government / Police network CIDRs",
     "note": "Add Tamil Nadu Police and authorized government network CIDRs here. These will be granted access to port 3001 (Kali MCP API).",
+    "dns_context": {
+      "domain": "tn.gov.in",
+      "soa": "ns1.tn.gov.in. root.tn.gov.in. 2026021399 3600 3600 3600 3600"
+    },
     "ipv4_ranges": [
-      "# PLACEHOLDER — Add Tamil Nadu Police network CIDRs here",
-      "# Example: 203.0.113.0/24"
+      "103.59.65.109/32"
     ]
   },
   "security_group": {
