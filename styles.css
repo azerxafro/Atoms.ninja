@@ -1528,6 +1528,12 @@ html {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
+}
+
+/* Sidebar icon (replacing inline margin-right) */
+.sidebar-icon {
+  margin-right: 8px;
 }
 
 .user-info {
