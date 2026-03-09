@@ -5,15 +5,16 @@
  */
 
 // Configure allowed origins from environment variable or use defaults
-const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",")
-  : [
-      "https://www.atoms.ninja",
-      "https://beta.atoms.ninja",
-      "https://atoms-ninja.vercel.app",
-      "http://localhost:3000",
-      "http://localhost:3001",
-    ];
+const ALLOWED_ORIGINS =
+  typeof process !== "undefined" && process.env && process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",")
+    : [
+        "https://www.atoms.ninja",
+        "https://beta.atoms.ninja",
+        "https://atoms-ninja.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:3001",
+      ];
 
 // Keywords that indicate user is requesting a task/command
 // These trigger the switch from nerdy mode to action mode

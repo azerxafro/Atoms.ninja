@@ -676,6 +676,13 @@ function initArsenal() {
   const isAuth = localStorage.getItem("discord_user") !== null;
   const originalTerminal = document.getElementById("originalDemoCard");
   const arsenalLayout = document.getElementById("arsenalLayout");
+  const menuToggle = document.getElementById("menuToggle");
+
+  if (menuToggle) {
+    menuToggle.addEventListener("click", () => {
+      document.querySelector(".sidebar").classList.toggle("active");
+    });
+  }
 
   // Show Arsenal only if authenticated
   if (isAuth) {

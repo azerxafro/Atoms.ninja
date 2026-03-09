@@ -1300,6 +1300,12 @@ html {
 
 .splash-content {
   text-align: center;
+  padding: clamp(32px, 5vh, 64px) clamp(24px, 4vw, 48px);
+  background: var(--color-bg);
+  border-radius: 32px;
+  box-shadow: var(--shadow-neu-out);
+  max-width: 540px;
+  width: 90%;
 }
 
 .ascii-art {
@@ -1313,6 +1319,10 @@ html {
   white-space: pre;
   margin-bottom: 24px;
   min-height: 120px;
+  background: var(--color-bg);
+  padding: 20px 10px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-neu-in-deep);
 }
 
 .splash-subtitle {
