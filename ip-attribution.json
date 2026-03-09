@@ -29,7 +29,8 @@
     "description": "Admin operator IP — SSH + API access to EC2",
     "ssh_source_ip": "122.178.55.87/32",
     "creator_ip": "122.178.55.87/32",
-    "note": "Creator (Chief) IP — whitelisted for SSH and Kali MCP API access"
+    "creator_ip_range": "122.178.55.0/24",
+    "note": "Creator (Chief) IP + /24 range whitelisted for SSH and Kali MCP API access"
   },
   "government": {
     "description": "Tamil Nadu Government / Police network CIDRs",
