@@ -26,9 +26,10 @@
     "note": "These are static IPs — update only if instances are replaced"
   },
   "admin": {
-    "description": "Admin operator IP — SSH access to EC2",
-    "ssh_source_ip": "YOUR_ADMIN_IP/32",
-    "note": "REQUIRED: Replace YOUR_ADMIN_IP/32 with your actual admin CIDR before running secure-sg"
+    "description": "Admin operator IP — SSH + API access to EC2",
+    "ssh_source_ip": "122.178.55.87/32",
+    "creator_ip": "122.178.55.87/32",
+    "note": "Creator (Chief) IP — whitelisted for SSH and Kali MCP API access"
   },
   "government": {
     "description": "Tamil Nadu Government / Police network CIDRs",
@@ -49,7 +50,7 @@
       "ssh_22": "admin.ssh_source_ip only",
       "http_80": "0.0.0.0/0 (redirect to HTTPS)",
       "https_443": "0.0.0.0/0 (public API)",
-      "api_3001": "vercel.ipv4_ranges + government.ipv4_ranges only"
+      "api_3001": "vercel.ipv4_ranges + government.ipv4_ranges + admin.creator_ip"
     }
   }
 }
