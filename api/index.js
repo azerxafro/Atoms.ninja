@@ -27,8 +27,7 @@ const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || "";
 const DISCORD_REDIRECT_URI =
   process.env.DISCORD_REDIRECT_URI ||
   "https://beta.atoms.ninja/api/auth/discord/callback";
-const DISCORD_SCOPES =
-  "identify connections guilds.members.read identify.premium guilds guilds.channels.read rpc webhook.incoming sdk.social_layer dm_channels.messages.read presences.read voice activities.invites.write applications.entitlements applications.builds.read rpc.screenshare.read rpc.voice.write bot rpc.voice.read rpc.video.write rpc.activities.write applications.builds.upload applications.store.update activities.write relationships.write role_connections.write openid gateway.connect sdk.social_layer_presence application_identities.write applications.commands.permissions.update email guilds.join gdm.join rpc.notifications.read rpc.video.read rpc.screenshare.write messages.read applications.commands activities.read relationships.read dm_channels.read presences.write dm_channels.messages.write payment_sources.country_code lobbies.write";
+const DISCORD_SCOPES = "identify email connections guilds";
 
 // ─── Proxy to EC2 ─────────────────────────────
 async function proxyToEC2(path, body, timeout = 120000) {
