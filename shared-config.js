@@ -9,6 +9,7 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
   : [
       "https://www.atoms.ninja",
+      "https://beta.atoms.ninja",
       "https://atoms-ninja.vercel.app",
       "http://localhost:3000",
       "http://localhost:3001",

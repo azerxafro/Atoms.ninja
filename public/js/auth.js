@@ -134,6 +134,70 @@ function showMainApp() {
   }
   // Validate token in background
   validateSession();
+
+  // Initialize Social features
+  initDiscordSocial();
+}
+
+async function initDiscordSocial() {
+  const stored = localStorage.getItem("discord_user");
+  if (!stored) return;
+
+  try {
+    const userData = JSON.parse(stored);
+
+    // Set initial activity
+    await updateDiscordActivity({
+      state: "Analyzing Systems",
+      details: "In the Atoms Ninja Arsenal",
+      assets: {
+        largeImage: "logo",
+        largeText: "Atoms Ninja",
+      },
+    });
+
+    // Optionally fetch friends/relationships
+    // const friends = await getDiscordRelationships();
+    // console.log("Discord Friends:", friends);
+  } catch (e) {
+    console.error("Social init failed:", e);
+  }
+}
+
+async function updateDiscordActivity(activity) {
+  const stored = localStorage.getItem("discord_user");
+  if (!stored) return;
+
+  try {
+    const userData = JSON.parse(stored);
+    const response = await fetch("/api/auth/social/activity", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userData.accessToken}`,
+      },
+      body: JSON.stringify(activity),
+    });
+    return await response.json();
+  } catch (e) {
+    console.error("Failed to update activity:", e);
+  }
+}
+
+async function getDiscordRelationships() {
+  const stored = localStorage.getItem("discord_user");
+  if (!stored) return [];
+
+  try {
+    const userData = JSON.parse(stored);
+    const response = await fetch("/api/auth/social/relationships", {
+      headers: { Authorization: `Bearer ${userData.accessToken}` },
+    });
+    if (response.ok) return await response.json();
+  } catch (e) {
+    console.error("Failed to fetch relationships:", e);
+  }
+  return [];
 }
 
 function handleAuthCallback() {

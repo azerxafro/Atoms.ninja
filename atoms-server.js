@@ -34,6 +34,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const VENICE_API_KEY = process.env.VENICE_API_KEY;
 
 // ═══════════════════════════════════════════════
 //  COMPLETE Kali Arsenal — ALL Commands
@@ -427,7 +428,11 @@ app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     service: "Atoms Ninja — Full Arsenal Server",
-    ai: OPENROUTER_API_KEY ? "openrouter (configured)" : "not configured",
+    ai: VENICE_API_KEY
+      ? "venice (primary)"
+      : OPENROUTER_API_KEY
+        ? "openrouter (configured)"
+        : "not configured",
     tools: ALLOWED_COMMANDS.length,
     timestamp: new Date().toISOString(),
   });
@@ -861,7 +866,11 @@ app.get("/api/tools", (req, res) => {
     ai: {
       provider: "openrouter",
       models: FREE_MODELS,
-      status: OPENROUTER_API_KEY ? "configured" : "not configured",
+      status: VENICE_API_KEY
+        ? "configured (venice)"
+        : OPENROUTER_API_KEY
+          ? "configured (openrouter)"
+          : "not configured",
     },
   });
 });
@@ -875,7 +884,9 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`🛡️  Atoms Ninja — Full Arsenal Server`);
   console.log(`🛡️  ═══════════════════════════════════════════════`);
   console.log(`📡 Port: ${PORT}`);
-  console.log(`🤖 AI: OpenRouter (${OPENROUTER_API_KEY ? "✅" : "❌"})`);
+  console.log(
+    `🤖 AI: Venice (${VENICE_API_KEY ? "✅" : "❌"}) | OpenRouter (${OPENROUTER_API_KEY ? "✅" : "❌"})`,
+  );
   console.log(`🔧 Tools: ${ALLOWED_COMMANDS.length} commands whitelisted`);
   console.log(`⚡ Health: http://0.0.0.0:${PORT}/health`);
   console.log(`🛡️  ═══════════════════════════════════════════════\n`);

@@ -5,8 +5,8 @@
 }
 
 :root {
-  /* Premium Black Neumorphism Theme */
-  --color-bg: #121416; /* Deep dark grey/black base required for neumorphism */
+  /* Premium Black Neumorphism Theme - Refined */
+  --color-bg: #121416;
   --color-text: #e2e8f0;
   --color-text-secondary: #94a3b8;
   --color-text-dim: #64748b;
@@ -17,34 +17,43 @@
   --color-success: #10b981;
   --gradient-primary: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
 
-  /* Neumorphic Shadows (Light source: Top-Left) */
+  /* Neumorphic Shadows - Refined for Ultra Premium Look */
   --shadow-neu-out:
-    -5px -5px 12px rgba(32, 36, 40, 0.4),
-    /* Highlight reflection */ 5px 5px 12px rgba(0, 0, 0, 0.8); /* Drop shadow */
+    -6px -6px 14px rgba(255, 255, 255, 0.03), 6px 6px 14px rgba(0, 0, 0, 0.6);
 
   --shadow-neu-out-sm:
-    -3px -3px 8px rgba(32, 36, 40, 0.4), 3px 3px 8px rgba(0, 0, 0, 0.8);
+    -3px -3px 8px rgba(255, 255, 255, 0.02), 3px 3px 8px rgba(0, 0, 0, 0.5);
 
   --shadow-neu-out-hover:
-    -6px -6px 16px rgba(36, 40, 45, 0.5), 6px 6px 16px rgba(0, 0, 0, 0.9);
+    -8px -8px 18px rgba(255, 255, 255, 0.04), 8px 8px 18px rgba(0, 0, 0, 0.7);
 
   --shadow-neu-in:
-    inset -4px -4px 8px rgba(32, 36, 40, 0.3),
-    inset 4px 4px 8px rgba(0, 0, 0, 0.7);
+    inset -4px -4px 10px rgba(255, 255, 255, 0.02),
+    inset 4px 4px 10px rgba(0, 0, 0, 0.5);
 
   --shadow-neu-in-deep:
-    inset -6px -6px 12px rgba(32, 36, 40, 0.3),
-    inset 6px 6px 12px rgba(0, 0, 0, 0.9);
+    inset -6px -6px 15px rgba(255, 255, 255, 0.03),
+    inset 6px 6px 15px rgba(0, 0, 0, 0.7);
 
   /* Other Accents */
   --shadow-glow:
-    0 0 30px rgba(16, 185, 129, 0.2), 0 0 60px rgba(6, 182, 212, 0.1);
-  --border-glow:
-    0 0 0 1px rgba(16, 185, 129, 0.2), inset 0 0 20px rgba(16, 185, 129, 0.05);
+    0 0 30px rgba(16, 185, 129, 0.15), 0 0 60px rgba(6, 182, 212, 0.08);
 
   --font-sans:
     "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", "Courier New", Courier, monospace;
+}
+
+/* App-like Behaviors */
+html,
+body {
+  overscroll-behavior-y: none;
+  height: 100%;
+  width: 100%;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Base Body - Solid color for Neumorphism effect */
@@ -72,14 +81,14 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: clamp(10px, 1.5vh, 20px) clamp(12px, 2vw, 32px);
   background: var(--color-bg);
   box-shadow: var(--shadow-neu-out-sm);
-  border-radius: 0 0 20px 20px; /* Rounded bottom corners for premium feel */
+  border-radius: 0 0 24px 24px;
   position: sticky;
   top: 0;
   z-index: 100;
-  margin-bottom: 20px;
+  margin-bottom: clamp(12px, 2vh, 40px);
 }
 
 .logo {
@@ -131,7 +140,9 @@ button {
   font-weight: 600;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   letter-spacing: 0.5px;
-  border-radius: 12px; /* Smoother curve for neumorphism */
+  border-radius: 12px;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .btn-primary {
@@ -205,8 +216,8 @@ button {
 .hero {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 64px;
-  padding: 100px 0 80px;
+  gap: clamp(32px, 5vw, 84px);
+  padding: clamp(40px, 8vh, 120px) 0 clamp(40px, 5vh, 80px);
   align-items: center;
   position: relative;
 }
@@ -288,7 +299,7 @@ button {
 
 .demo-card {
   background: var(--color-bg);
-  border-radius: 20px;
+  border-radius: 24px;
   overflow: hidden;
   box-shadow: var(--shadow-neu-out);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -300,13 +311,13 @@ button {
 }
 
 .demo-header {
-  padding: 16px 20px;
+  padding: 18px 24px;
   background: transparent;
   display: flex;
   align-items: center;
   gap: 16px;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.3); /* Simulate pressed seam */
-  box-shadow: 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .demo-dots {
@@ -523,8 +534,8 @@ button {
 
 .feature-card {
   background: var(--color-bg);
-  padding: 36px 32px;
-  border-radius: 20px;
+  padding: clamp(24px, 4vw, 36px);
+  border-radius: 24px;
   border: none;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: var(--shadow-neu-out);
@@ -575,7 +586,7 @@ button {
 .footer-content {
   display: grid;
   grid-template-columns: 2fr 3fr;
-  gap: 60px;
+  gap: clamp(32px, 6vw, 80px);
   margin-bottom: 40px;
 }
 
@@ -674,13 +685,14 @@ button {
 
 /* Responsive Design */
 @media (max-width: 1024px) {
+  /* Soften shadows slightly for tablet while maintaining the new palette */
   :root {
-    /* Slightly soften shadows for tablet */
     --shadow-neu-out:
-      -4px -4px 10px rgba(32, 36, 40, 0.4), 4px 4px 10px rgba(0, 0, 0, 0.8);
+      -5px -5px 12px rgba(255, 255, 255, 0.025),
+      5px 5px 12px rgba(0, 0, 0, 0.55);
     --shadow-neu-in:
-      inset -3px -3px 6px rgba(32, 36, 40, 0.3),
-      inset 3px 3px 6px rgba(0, 0, 0, 0.7);
+      inset -3px -3px 8px rgba(255, 255, 255, 0.02),
+      inset 3px 3px 8px rgba(0, 0, 0, 0.5);
   }
 
   .hero {
@@ -721,15 +733,15 @@ button {
 }
 
 @media (max-width: 768px) {
+  /* Crisp shadows for mobile performance */
   :root {
-    /* Scale down shadows for mobile performance and crispness */
     --shadow-neu-out:
-      -3px -3px 8px rgba(32, 36, 40, 0.4), 3px 3px 8px rgba(0, 0, 0, 0.8);
+      -3px -3px 8px rgba(255, 255, 255, 0.02), 3px 3px 8px rgba(0, 0, 0, 0.5);
     --shadow-neu-out-hover:
-      -4px -4px 10px rgba(36, 40, 45, 0.5), 4px 4px 10px rgba(0, 0, 0, 0.9);
+      -4px -4px 10px rgba(255, 255, 255, 0.03), 4px 4px 10px rgba(0, 0, 0, 0.6);
     --shadow-neu-in:
-      inset -2px -2px 5px rgba(32, 36, 40, 0.3),
-      inset 2px 2px 5px rgba(0, 0, 0, 0.7);
+      inset -2px -2px 5px rgba(255, 255, 255, 0.02),
+      inset 2px 2px 5px rgba(0, 0, 0, 0.5);
   }
 
   .header {
@@ -830,10 +842,10 @@ button {
 @media (max-width: 480px) {
   :root {
     --shadow-neu-out:
-      -2px -2px 6px rgba(32, 36, 40, 0.35), 2px 2px 6px rgba(0, 0, 0, 0.7);
+      -2px -2px 6px rgba(255, 255, 255, 0.02), 2px 2px 6px rgba(0, 0, 0, 0.5);
     --shadow-neu-in:
-      inset -2px -2px 4px rgba(32, 36, 40, 0.25),
-      inset 2px 2px 4px rgba(0, 0, 0, 0.6);
+      inset -2px -2px 4px rgba(255, 255, 255, 0.02),
+      inset 2px 2px 4px rgba(0, 0, 0, 0.4);
   }
 
   .hero-title {
@@ -913,6 +925,7 @@ html {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.8);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   animation: fadeIn 0.3s ease;
 }
@@ -1201,6 +1214,7 @@ html {
   display: flex;
   align-items: center;
   gap: 8px;
+  -webkit-user-select: none;
   user-select: none;
   transition: all 0.2s ease;
   list-style: none;
@@ -1351,12 +1365,12 @@ html {
 
 .login-card {
   text-align: center;
-  padding: 48px;
+  padding: clamp(32px, 5vh, 64px) clamp(24px, 4vw, 48px);
   background: var(--color-bg);
   border: none;
-  border-radius: 24px;
+  border-radius: 32px;
   box-shadow: var(--shadow-neu-out);
-  max-width: 460px;
+  max-width: 480px;
   width: 90%;
   animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -1602,13 +1616,15 @@ html {
 
 .arsenal-layout {
   display: flex;
-  gap: 24px;
+  gap: 0;
   background: var(--color-bg);
   border: none;
   border-radius: 24px;
   overflow: hidden;
   min-height: 700px;
   box-shadow: var(--shadow-neu-out-sm);
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Sidebar */
@@ -1813,4 +1829,13 @@ html {
 }
 .justify-between {
   justify-content: space-between;
+}
+
+/* UI Feedback Classes */
+.terminal-denied {
+  color: #ef4444 !important;
+}
+
+.settings-warning-text {
+  color: #f59e0b !important;
 }

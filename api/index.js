@@ -14,17 +14,21 @@ const {
   callAI,
   buildThinkingChain,
 } = require("../lib/ai-core");
+const DiscordSocial = require("../lib/discord-social");
 
 const EC2_ENDPOINT = process.env.ATOMS_EC2_ENDPOINT || "";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
+const VENICE_API_KEY = process.env.VENICE_API_KEY || "";
 
 // ─── Discord OAuth2 Config ────────────────────
-const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || "";
+const DISCORD_CLIENT_ID =
+  process.env.DISCORD_CLIENT_ID || "1477862784774705283";
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || "";
 const DISCORD_REDIRECT_URI =
   process.env.DISCORD_REDIRECT_URI ||
-  "https://www.atoms.ninja/api/auth/discord/callback";
-const DISCORD_SCOPES = "identify email";
+  "https://beta.atoms.ninja/api/auth/discord/callback";
+const DISCORD_SCOPES =
+  "identify connections guilds.members.read identify.premium guilds guilds.channels.read rpc webhook.incoming sdk.social_layer dm_channels.messages.read presences.read voice activities.invites.write applications.entitlements applications.builds.read rpc.screenshare.read rpc.voice.write bot rpc.voice.read rpc.video.write rpc.activities.write applications.builds.upload applications.store.update activities.write relationships.write role_connections.write openid gateway.connect sdk.social_layer_presence application_identities.write applications.commands.permissions.update email guilds.join gdm.join rpc.notifications.read rpc.video.read rpc.screenshare.write messages.read applications.commands activities.read relationships.read dm_channels.read presences.write dm_channels.messages.write payment_sources.country_code lobbies.write";
 
 // ─── Proxy to EC2 ─────────────────────────────
 async function proxyToEC2(path, body, timeout = 120000) {
@@ -223,6 +227,8 @@ module.exports = async (req, res) => {
         scope: DISCORD_SCOPES,
         state,
         prompt: "consent",
+        integration_type: "1",
+        permissions: "8",
       });
       res.setHeader(
         "Location",
@@ -310,6 +316,38 @@ module.exports = async (req, res) => {
       }
     }
 
+    // ─── Discord Social: Set Activity ────────
+    if (path === "/api/auth/social/activity") {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "No token provided" });
+      }
+      const token = authHeader.split(" ")[1];
+      try {
+        const social = new DiscordSocial(token);
+        const result = await social.setActivity(req.body);
+        return res.status(200).json(result);
+      } catch (err) {
+        return res.status(500).json({ error: err.message });
+      }
+    }
+
+    // ─── Discord Social: Get Relationships ───
+    if (path === "/api/auth/social/relationships") {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "No token provided" });
+      }
+      const token = authHeader.split(" ")[1];
+      try {
+        const social = new DiscordSocial(token);
+        const result = await social.getRelationships();
+        return res.status(200).json(result);
+      } catch (err) {
+        return res.status(500).json({ error: err.message });
+      }
+    }
+
     // ─── Health ──────────────────────────────
     if (path === "/api" || path === "/api/health") {
       let ec2Status = "not configured";
@@ -329,9 +367,21 @@ module.exports = async (req, res) => {
         message: "Atoms Ninja API is online",
         mode: EC2_ENDPOINT ? "proxy" : "direct",
         ai: {
-          primary: OPENROUTER_API_KEY ? "openrouter" : "none",
-          fallback: "bedrock (aws)",
-          status: OPENROUTER_API_KEY ? "configured" : "bedrock fallback",
+          primary: VENICE_API_KEY
+            ? "venice"
+            : OPENROUTER_API_KEY
+              ? "openrouter"
+              : "none",
+          fallback: VENICE_API_KEY
+            ? OPENROUTER_API_KEY
+              ? "openrouter"
+              : "bedrock"
+            : "bedrock (aws)",
+          status: VENICE_API_KEY
+            ? "configured (venice)"
+            : OPENROUTER_API_KEY
+              ? "configured (openrouter)"
+              : "bedrock fallback",
         },
         ec2: { endpoint: EC2_ENDPOINT || "none", status: ec2Status },
         endpoints: [
@@ -472,10 +522,18 @@ module.exports = async (req, res) => {
         },
         ai: {
           provider: {
-            primary: OPENROUTER_API_KEY ? "openrouter" : "none",
+            primary: VENICE_API_KEY
+              ? "venice"
+              : OPENROUTER_API_KEY
+                ? "openrouter"
+                : "none",
             fallback: "bedrock",
           },
-          status: OPENROUTER_API_KEY ? "configured" : "bedrock only",
+          status: VENICE_API_KEY
+            ? "configured (venice)"
+            : OPENROUTER_API_KEY
+              ? "configured (openrouter)"
+              : "bedrock only",
         },
         ec2: EC2_ENDPOINT ? "connected" : "not connected (tools require EC2)",
       });
