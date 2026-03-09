@@ -478,21 +478,64 @@ app.post("/api/multi-ai", async (req, res) => {
 
           if (ALLOWED_COMMANDS.includes(toolName)) {
             console.log(`⚡ AI auto-executing: ${parsed.command}`);
-            const cmdParts = parsed.command.trim().split(/\s+/);
-            const tool = cmdParts[0];
-            const args = cmdParts.slice(1);
-            const timeout = TOOL_TIMEOUTS[tool] || TOOL_TIMEOUTS.default;
+            const fullCmd = parsed.command.trim();
+            const isChained = /[&|;]/.test(fullCmd);
 
             let toolOutput = null;
             let toolError = null;
 
             try {
-              const result = await executeTool(tool, args, { timeout });
-              toolOutput = {
-                result: result.stdout,
-                stderr: result.stderr,
-                exitCode: result.code,
-              };
+              if (isChained) {
+                // Chained command — execute via bash shell
+                const result = await new Promise((resolve, reject) => {
+                  const child = spawn("bash", ["-c", fullCmd], {
+                    shell: false,
+                    env: {
+                      ...process.env,
+                      PATH:
+                        process.env.PATH +
+                        ":/usr/local/bin:/usr/bin:/usr/sbin:/usr/local/go/bin",
+                    },
+                  });
+                  let stdout = "";
+                  let stderr = "";
+                  const timer = setTimeout(() => {
+                    child.kill("SIGKILL");
+                    reject(new Error("Command timed out after 300s"));
+                  }, 300000);
+                  child.stdout.on("data", (d) => {
+                    stdout += d.toString();
+                  });
+                  child.stderr.on("data", (d) => {
+                    stderr += d.toString();
+                  });
+                  child.on("close", (code) => {
+                    clearTimeout(timer);
+                    resolve({ stdout, stderr, code: code || 0 });
+                  });
+                  child.on("error", (err) => {
+                    clearTimeout(timer);
+                    reject(err);
+                  });
+                });
+                toolOutput = {
+                  result: result.stdout,
+                  stderr: result.stderr,
+                  exitCode: result.code,
+                };
+              } else {
+                // Single command — use executeTool
+                const cmdParts = fullCmd.split(/\s+/);
+                const tool = cmdParts[0];
+                const args = cmdParts.slice(1);
+                const timeout = TOOL_TIMEOUTS[tool] || TOOL_TIMEOUTS.default;
+                const result = await executeTool(tool, args, { timeout });
+                toolOutput = {
+                  result: result.stdout,
+                  stderr: result.stderr,
+                  exitCode: result.code,
+                };
+              }
             } catch (execErr) {
               toolError = execErr.message;
             }
@@ -618,6 +661,112 @@ app.post("/api/execute", async (req, res) => {
     const result = await executeTool(command, args, { timeout });
     res.json({
       command,
+      result: result.stdout,
+      stderr: result.stderr,
+      exitCode: result.code,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ═══════════════════════════════════════════════
+//  POST /api/execute-shell — Chained command execution via bash
+//  Validates each command in the chain against ALLOWED_COMMANDS
+// ═══════════════════════════════════════════════
+
+app.post("/api/execute-shell", async (req, res) => {
+  try {
+    const { shellCommand } = req.body;
+    if (!shellCommand)
+      return res.status(400).json({ error: "shellCommand required" });
+
+    // Security: block dangerous patterns
+    const BLOCKED_PATTERNS = [
+      /rm\s+(-rf?|--recursive)\s+\//i,
+      />\s*\/etc\//,
+      /mkfs\./,
+      /dd\s+if=/,
+      /shutdown/,
+      /reboot/,
+      /init\s+0/,
+      /:\(\)\s*\{\s*:\|:\s*&\s*\}/, // fork bomb
+    ];
+
+    for (const pattern of BLOCKED_PATTERNS) {
+      if (pattern.test(shellCommand)) {
+        return res
+          .status(403)
+          .json({ error: "Dangerous command pattern blocked" });
+      }
+    }
+
+    // Extract individual commands and validate each
+    // Split on shell operators: &&, ||, ;, |
+    const cmdSegments = shellCommand.split(/\s*(?:&&|\|\|?|;)\s*/);
+    const invalidCmds = [];
+
+    for (const segment of cmdSegments) {
+      const trimmed = segment.trim();
+      if (!trimmed) continue;
+      // Extract the binary name (first word, handle sudo prefix)
+      let binary = trimmed.split(/\s+/)[0];
+      if (binary === "sudo") binary = trimmed.split(/\s+/)[1];
+      // Also handle subshell $() and backtick
+      binary = binary.replace(/^\$\(/, "").replace(/^`/, "");
+      if (binary && !ALLOWED_COMMANDS.includes(binary)) {
+        invalidCmds.push(binary);
+      }
+    }
+
+    if (invalidCmds.length > 0) {
+      return res.status(403).json({
+        error: `Command(s) not allowed: ${invalidCmds.join(", ")}`,
+      });
+    }
+
+    res.setTimeout(300000);
+    const timeout = 300000;
+
+    const result = await new Promise((resolve, reject) => {
+      console.log(`🔧 Shell executing: ${shellCommand}`);
+
+      const child = spawn("bash", ["-c", shellCommand], {
+        shell: false,
+        env: {
+          ...process.env,
+          PATH:
+            process.env.PATH +
+            ":/usr/local/bin:/usr/bin:/usr/sbin:/usr/local/go/bin",
+        },
+      });
+
+      let stdout = "";
+      let stderr = "";
+
+      const timer = setTimeout(() => {
+        child.kill("SIGKILL");
+        reject(new Error(`Shell command timed out after ${timeout / 1000}s`));
+      }, timeout);
+
+      child.stdout.on("data", (data) => {
+        stdout += data.toString();
+      });
+      child.stderr.on("data", (data) => {
+        stderr += data.toString();
+      });
+      child.on("close", (code) => {
+        clearTimeout(timer);
+        resolve({ stdout, stderr, code: code || 0 });
+      });
+      child.on("error", (err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+    });
+
+    res.json({
+      command: shellCommand,
       result: result.stdout,
       stderr: result.stderr,
       exitCode: result.code,

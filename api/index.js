@@ -149,15 +149,29 @@ async function processAIDirect(body) {
         // If EC2 is available, try to execute the tool there
         if (EC2_ENDPOINT) {
           try {
-            const cmdParts = parsed.command.trim().split(/\s+/);
-            const execResult = await proxyToEC2(
-              "/api/execute",
-              {
-                command: cmdParts[0],
-                args: cmdParts.slice(1),
-              },
-              300000,
-            );
+            const fullCmd = parsed.command.trim();
+            const isChained = /[&|;]/.test(fullCmd);
+            let execResult;
+
+            if (isChained) {
+              // Chained command — use shell execution endpoint
+              execResult = await proxyToEC2(
+                "/api/execute-shell",
+                { shellCommand: fullCmd },
+                300000,
+              );
+            } else {
+              // Single command — use standard execute
+              const cmdParts = fullCmd.split(/\s+/);
+              execResult = await proxyToEC2(
+                "/api/execute",
+                {
+                  command: cmdParts[0],
+                  args: cmdParts.slice(1),
+                },
+                300000,
+              );
+            }
 
             if (execResult.data && !execResult.data.error) {
               thinking.push({
@@ -203,7 +217,91 @@ async function processAIDirect(body) {
     /* not JSON */
   }
 
-  // Regular text response
+  // Regular text response — BUT if this was a task query, retry with stronger JSON enforcement
+  if (isTask) {
+    try {
+      const retryMessages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: message },
+        { role: "assistant", content: reply },
+        {
+          role: "user",
+          content: `CRITICAL: You must respond with ONLY a JSON object in this exact format, no other text:\n{"action":"execute","command":"<full shell command>","explanation":"<1 line>"}\nDo NOT explain, just output the JSON.`,
+        },
+      ];
+      const retryResult = await callAI(retryMessages);
+      const retryMatch = retryResult.content.match(
+        /\{[\s\S]*"action"\s*:\s*"execute"[\s\S]*\}/,
+      );
+      if (retryMatch) {
+        const parsed = JSON.parse(retryMatch[0]);
+        if (parsed.action === "execute" && parsed.command) {
+          const thinking = buildThinkingChain(message, parsed, {
+            ec2Endpoint: EC2_ENDPOINT,
+          });
+
+          if (EC2_ENDPOINT) {
+            try {
+              const fullCmd = parsed.command.trim();
+              const isChained = /[&|;]/.test(fullCmd);
+              let execResult;
+              if (isChained) {
+                execResult = await proxyToEC2(
+                  "/api/execute-shell",
+                  { shellCommand: fullCmd },
+                  300000,
+                );
+              } else {
+                const cmdParts = fullCmd.split(/\s+/);
+                execResult = await proxyToEC2(
+                  "/api/execute",
+                  { command: cmdParts[0], args: cmdParts.slice(1) },
+                  300000,
+                );
+              }
+              if (execResult.data && !execResult.data.error) {
+                thinking.push({
+                  step: 4,
+                  title: "🔍 Analyzing Results",
+                  content: `Execution complete. Output: ${(execResult.data.result || "").length} chars.`,
+                });
+                return {
+                  status: 200,
+                  data: {
+                    provider: retryResult.provider,
+                    model: retryResult.model,
+                    autoExecute: parsed,
+                    response: parsed.explanation,
+                    thinking,
+                    toolOutput: {
+                      result: execResult.data.result,
+                      stderr: execResult.data.stderr,
+                      exitCode: execResult.data.exitCode,
+                    },
+                  },
+                };
+              }
+            } catch (e) {
+              /* EC2 unreachable */
+            }
+          }
+          return {
+            status: 200,
+            data: {
+              provider: retryResult.provider,
+              model: retryResult.model,
+              autoExecute: parsed,
+              response: parsed.explanation,
+              thinking,
+            },
+          };
+        }
+      }
+    } catch (e) {
+      /* retry failed, fall through to text response */
+    }
+  }
+
   return {
     status: 200,
     data: {
