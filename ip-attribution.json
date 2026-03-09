@@ -44,6 +44,7 @@
   "security_group": {
     "sg_id": "sg-0047128872be65558",
     "region": "us-east-1",
+    "enforce_whitelisting": false,
     "rules": {
       "ssh_22": "admin.ssh_source_ip only",
       "http_80": "0.0.0.0/0 (redirect to HTTPS)",
