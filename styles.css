@@ -1667,6 +1667,23 @@ html {
   position: sticky;
   top: 0;
   flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 12px 20px;
+  justify-content: flex-start;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+  object-fit: contain;
 }
 
 .chat-main > .container {
@@ -1690,7 +1707,7 @@ html {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin: 16px auto 16px auto;
+  margin: 16px 0 16px 0;
   padding: 20px 24px;
   background: var(--color-bg);
   border-radius: 16px;
