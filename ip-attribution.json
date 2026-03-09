@@ -1,7 +1,7 @@
 {
   "_metadata": {
     "description": "Atoms Ninja IP Attribution Configuration",
-    "last_updated": "POPULATE — run: npm run fetch-ips",
+    "last_updated": "2026-03-09T17:30:00Z",
     "update_command": "npm run fetch-ips",
     "apply_command": "npm run secure-sg -- --apply",
     "sources": {
