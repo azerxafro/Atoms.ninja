@@ -146,7 +146,7 @@ function showLoginGate() {
 }
 
 function showMainApp() {
-  document.getElementById("mainApp").style.display = "block";
+  document.getElementById("mainApp").style.display = "flex";
   // Update nav auth UI
   const stored = localStorage.getItem("discord_user");
   if (stored) {
