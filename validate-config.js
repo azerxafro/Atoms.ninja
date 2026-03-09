@@ -35,86 +35,56 @@ function checkFile(filepath, description) {
 }
 
 function validateApiKey() {
-  log("\n📋 Validating API Key Configuration...", "cyan");
+  log("\n📋 Validating AI API Key Configuration...", "cyan");
 
   let score = 0;
   let total = 0;
 
   // Check .env file
   total++;
-  if (checkFile(".env.example", ".env.example file")) {
+  if (checkFile(".env", "Production .env file")) {
     score++;
-    try {
-      const envContent = fs.readFileSync(".env.example", "utf8");
-      if (envContent.includes("GEMINI_API_KEY")) {
-        log("  ✓ GEMINI_API_KEY defined in .env.example", "green");
-      }
-    } catch (e) {
-      log(`  ⚠️  Could not read .env.example: ${e.message}`, "yellow");
-    }
+  } else if (checkFile(".env.example", ".env.example file")) {
+    log("  ⚠️  Using .env.example - please create a real .env file", "yellow");
   }
 
-  // Check environment variable or config.js
-  total++;
-  let apiKey = process.env.GEMINI_API_KEY;
+  // Check AI Provider Keys
+  const providers = [
+    { key: "VENICE_API_KEY", name: "Venice.ai (Primary)" },
+    { key: "OPENROUTER_API_KEY", name: "OpenRouter (Secondary)" },
+    { key: "AWS_ACCESS_KEY_ID", name: "AWS Bedrock (Fallback)" },
+  ];
 
-  // If not in env, check config.js
-  if (!apiKey && fs.existsSync("config.js")) {
-    try {
-      const configContent = fs.readFileSync("config.js", "utf8");
-      const match = configContent.match(/GEMINI_API_KEY:\s*['"]([^'"]+)['"]/);
-      if (match) {
-        apiKey = match[1];
-      }
-    } catch (e) {
-      // Ignore error
-    }
-  }
-
-  if (apiKey) {
-    log(
-      `✓ API Key found in environment: ${apiKey.substring(0, 10)}...`,
-      "green",
-    );
-    score++;
-
-    // Validate format (basic check)
-    if (apiKey.length >= 30) {
-      log("  ✓ API Key length looks valid", "green");
+  providers.forEach((p) => {
+    total++;
+    const key = process.env[p.key];
+    if (key && key.length > 5) {
+      log(`✓ ${p.name} configured: ${key.substring(0, 8)}...`, "green");
+      score++;
     } else {
-      log("  ⚠️  API Key seems too short", "yellow");
+      log(`✗ ${p.name} NOT found in environment`, "red");
     }
-  } else {
-    log("✗ No API Key found in environment", "red");
-  }
+  });
 
-  // Check config.js
+  // Check shared-config.js for CORS
   total++;
-  if (checkFile("config.js", "config.js file")) {
+  if (checkFile("shared-config.js", "Shared configuration")) {
     score++;
-    try {
-      const configContent = fs.readFileSync("config.js", "utf8");
-      if (configContent.includes("GEMINI_API_KEY")) {
-        log("  ✓ GEMINI_API_KEY defined in config.js", "green");
-      }
-    } catch (e) {
-      log(`  ⚠️  Could not read config.js: ${e.message}`, "yellow");
-    }
   }
 
-  // Check atoms-server.js (replaces gemini-proxy.js)
+  // Check atoms-server.js
   total++;
   if (checkFile("atoms-server.js", "Backend server (atoms-server.js)")) {
     score++;
     try {
       const serverContent = fs.readFileSync("atoms-server.js", "utf8");
-      if (serverContent.includes("OPENROUTER_API_KEY")) {
-        log("  ✓ Backend configured for OpenRouter", "green");
-      }
       if (
-        serverContent.includes("callAI") ||
-        serverContent.includes("lib/ai-core")
+        serverContent.includes("VENICE_API_KEY") ||
+        serverContent.includes("OPENROUTER_API_KEY")
       ) {
+        log("  ✓ Backend configured for modern AI stack", "green");
+      }
+      if (serverContent.includes("lib/ai-core")) {
         log("  ✓ Backend uses shared AI core", "green");
       }
     } catch (e) {
@@ -243,39 +213,29 @@ function validateUserTaskHandling() {
   let score = 0;
   let total = 0;
 
-  // Check frontend files
+  // Check main entry point
   total++;
-  if (checkFile("script.js", "Frontend script")) {
+  if (checkFile("index.html", "Main index.html")) {
     score++;
-    try {
-      const scriptContent = fs.readFileSync("script.js", "utf8");
-
-      const features = [
-        { pattern: "CONFIG", name: "Configuration object" },
-        { pattern: "BACKEND_API_URL", name: "Backend API URL" },
-        { pattern: "KALI_MCP_ENDPOINT", name: "MCP endpoint configuration" },
-        { pattern: "processCommand", name: "Command processing function" },
-        { pattern: "executeCommand", name: "Command execution function" },
-      ];
-
-      features.forEach((feature) => {
-        if (scriptContent.includes(feature.pattern)) {
-          log(`  ✓ ${feature.name} present`, "green");
-        }
-      });
-    } catch (e) {
-      log(`  ⚠️  Could not read script.js: ${e.message}`, "yellow");
-    }
   }
 
-  // Check for test files
+  // Check styles
   total++;
-  const testFiles = ["test.js", "test-api-and-mcp.js"];
+  if (checkFile("styles.css", "Application CSS")) {
+    score++;
+  }
+
+  total++;
+  const testFiles = [
+    "tests/test.js",
+    "tests/test-api-and-mcp.js",
+    "tests/verify-ai.js",
+  ];
   let foundTests = false;
 
   testFiles.forEach((testFile) => {
     if (fs.existsSync(testFile)) {
-      log(`✓ Test file exists: ${testFile}`, "green");
+      log(`✓ Test found: ${testFile}`, "green");
       foundTests = true;
     }
   });

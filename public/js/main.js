@@ -461,8 +461,17 @@ testMCPConnection.addEventListener("click", async () => {
   statusDiv.textContent = "🔄 Testing connection...";
 
   try {
-    // Simulate connection test (replace with actual MCP server check)
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // Real connection test to the backend health endpoint
+    const response = await fetch(`${CONFIG.BACKEND_API_URL}/health`, {
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) throw new Error("Backend unreachable");
+    const health = await response.json();
+
+    if (health.ec2 && health.ec2.status === "unreachable") {
+      throw new Error("Kali MCP (EC2) is unreachable");
+    }
 
     CONFIG.KALI_MCP_ENDPOINT = endpoint;
     if (typeof AtomsNinjaConfig !== "undefined") {

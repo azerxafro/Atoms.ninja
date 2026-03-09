@@ -1,19 +1,31 @@
-  // Terminal functionality
-  const commandInput = document.getElementById("commandInput");
-  const executeBtn = document.getElementById("executeBtn");
-  const terminalOutput = document.getElementById("terminalOutput");
-  const launchBtn = document.getElementById("launchBtn");
-  const docsBtn = document.getElementById("docsBtn");
+// Terminal functionality
+const commandInput = document.getElementById("commandInput");
+const executeBtn = document.getElementById("executeBtn");
+const terminalOutput = document.getElementById("terminalOutput");
+const launchBtn = document.getElementById("launchBtn");
+const docsBtn = document.getElementById("docsBtn");
 
-  let isExecuting = false;
-  let commandHistory = [];
-  let historyIndex = -1;
+let isExecuting = false;
+let commandHistory = [];
+let historyIndex = -1;
 
-  // Advanced AI Memory System
-  let chatHistory = [];
-  const MAX_CHAT_HISTORY = 20; // Increased from 10
-  let conversationMode = "nerdy"; // 'nerdy' or 'action' - starts in nerdy mode
-  let currentSession = {
+// Advanced AI Memory System
+let chatHistory = [];
+const MAX_CHAT_HISTORY = 20; // Increased from 10
+let conversationMode = "nerdy"; // 'nerdy' or 'action' - starts in nerdy mode
+let currentSession = {
+  id: Date.now(),
+  startTime: new Date().toISOString(),
+  targets: new Set(),
+  findings: [],
+  toolsUsed: new Set(),
+  vulnerabilities: [],
+  recommendations: [],
+};
+
+// Session Management
+function startNewSession() {
+  currentSession = {
     id: Date.now(),
     startTime: new Date().toISOString(),
     targets: new Set(),
@@ -22,145 +34,133 @@
     vulnerabilities: [],
     recommendations: [],
   };
+  localStorage.setItem(
+    "atomsNinjaCurrentSession",
+    JSON.stringify(currentSession, (key, value) => {
+      if (value instanceof Set) return Array.from(value);
+      return value;
+    }),
+  );
+}
 
-  // Session Management
-  function startNewSession() {
-    currentSession = {
-      id: Date.now(),
-      startTime: new Date().toISOString(),
-      targets: new Set(),
-      findings: [],
-      toolsUsed: new Set(),
-      vulnerabilities: [],
-      recommendations: [],
-    };
-    localStorage.setItem(
-      "atomsNinjaCurrentSession",
-      JSON.stringify(currentSession, (key, value) => {
-        if (value instanceof Set) return Array.from(value);
-        return value;
-      }),
-    );
-  }
-
-  // Load current session
-  function loadCurrentSession() {
-    const saved = localStorage.getItem("atomsNinjaCurrentSession");
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        currentSession = {
-          ...data,
-          targets: new Set(data.targets),
-          toolsUsed: new Set(data.toolsUsed),
-        };
-      } catch (e) {
-        console.error("Failed to load session:", e);
-      }
+// Load current session
+function loadCurrentSession() {
+  const saved = localStorage.getItem("atomsNinjaCurrentSession");
+  if (saved) {
+    try {
+      const data = JSON.parse(saved);
+      currentSession = {
+        ...data,
+        targets: new Set(data.targets),
+        toolsUsed: new Set(data.toolsUsed),
+      };
+    } catch (e) {
+      console.error("Failed to load session:", e);
     }
   }
+}
 
-  // Extract and track targets from commands
-  function trackTarget(command) {
-    // Extract IPs, domains, and URLs
-    const ipPattern = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
-    const domainPattern = /\b[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6}\b/gi;
-    const urlPattern = /https?:\/\/[^\s]+/gi;
+// Extract and track targets from commands
+function trackTarget(command) {
+  // Extract IPs, domains, and URLs
+  const ipPattern = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
+  const domainPattern = /\b[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6}\b/gi;
+  const urlPattern = /https?:\/\/[^\s]+/gi;
 
-    const ips = command.match(ipPattern) || [];
-    const domains = command.match(domainPattern) || [];
-    const urls = command.match(urlPattern) || [];
+  const ips = command.match(ipPattern) || [];
+  const domains = command.match(domainPattern) || [];
+  const urls = command.match(urlPattern) || [];
 
-    [...ips, ...domains, ...urls].forEach((target) => {
-      currentSession.targets.add(target);
-    });
+  [...ips, ...domains, ...urls].forEach((target) => {
+    currentSession.targets.add(target);
+  });
 
-    saveSession();
-  }
+  saveSession();
+}
 
-  // Save finding from scan results
-  function saveFinding(tool, target, result) {
-    const finding = {
-      timestamp: new Date().toISOString(),
-      tool: tool,
-      target: target,
-      result: result.substring(0, 500), // Store first 500 chars
-      hash:
-        typeof crypto !== "undefined" && crypto.randomUUID
-          ? crypto.randomUUID()
-          : (function () {
-              try {
-                return btoa(encodeURIComponent(tool + target + Date.now()));
-              } catch (e) {
-                return (
-                  Date.now().toString(36) + Math.random().toString(36).substr(2)
-                );
-              }
-            })(), // Unique ID - with fallback for HTTP
-    };
+// Save finding from scan results
+function saveFinding(tool, target, result) {
+  const finding = {
+    timestamp: new Date().toISOString(),
+    tool: tool,
+    target: target,
+    result: result.substring(0, 500), // Store first 500 chars
+    hash:
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : (function () {
+            try {
+              return btoa(encodeURIComponent(tool + target + Date.now()));
+            } catch (e) {
+              return (
+                Date.now().toString(36) + Math.random().toString(36).substr(2)
+              );
+            }
+          })(), // Unique ID - with fallback for HTTP
+  };
 
-    currentSession.findings.push(finding);
-    currentSession.toolsUsed.add(tool);
+  currentSession.findings.push(finding);
+  currentSession.toolsUsed.add(tool);
 
-    // Auto-detect vulnerabilities
-    detectVulnerabilities(result);
+  // Auto-detect vulnerabilities
+  detectVulnerabilities(result);
 
-    saveSession();
-  }
+  saveSession();
+}
 
-  // Detect vulnerabilities from scan results
-  function detectVulnerabilities(result) {
-    const vulnPatterns = [
-      { pattern: /SQL injection/i, type: "SQL Injection", severity: "high" },
-      { pattern: /XSS|Cross-Site Scripting/i, type: "XSS", severity: "high" },
-      {
-        pattern: /open port|port.*open/i,
-        type: "Open Port",
-        severity: "medium",
-      },
-      {
-        pattern: /vulnerable|exploitable/i,
-        type: "Potential Vulnerability",
-        severity: "medium",
-      },
-      {
-        pattern: /weak|default password/i,
-        type: "Weak Credentials",
-        severity: "high",
-      },
-      {
-        pattern: /outdated|old version/i,
-        type: "Outdated Software",
-        severity: "medium",
-      },
-    ];
+// Detect vulnerabilities from scan results
+function detectVulnerabilities(result) {
+  const vulnPatterns = [
+    { pattern: /SQL injection/i, type: "SQL Injection", severity: "high" },
+    { pattern: /XSS|Cross-Site Scripting/i, type: "XSS", severity: "high" },
+    {
+      pattern: /open port|port.*open/i,
+      type: "Open Port",
+      severity: "medium",
+    },
+    {
+      pattern: /vulnerable|exploitable/i,
+      type: "Potential Vulnerability",
+      severity: "medium",
+    },
+    {
+      pattern: /weak|default password/i,
+      type: "Weak Credentials",
+      severity: "high",
+    },
+    {
+      pattern: /outdated|old version/i,
+      type: "Outdated Software",
+      severity: "medium",
+    },
+  ];
 
-    vulnPatterns.forEach(({ pattern, type, severity }) => {
-      if (pattern.test(result)) {
-        currentSession.vulnerabilities.push({
-          type: type,
-          severity: severity,
-          timestamp: new Date().toISOString(),
-          details: result.substring(0, 200),
-        });
-      }
-    });
-  }
+  vulnPatterns.forEach(({ pattern, type, severity }) => {
+    if (pattern.test(result)) {
+      currentSession.vulnerabilities.push({
+        type: type,
+        severity: severity,
+        timestamp: new Date().toISOString(),
+        details: result.substring(0, 200),
+      });
+    }
+  });
+}
 
-  // Save session
-  function saveSession() {
-    localStorage.setItem(
-      "atomsNinjaCurrentSession",
-      JSON.stringify(currentSession, (key, value) => {
-        if (value instanceof Set) return Array.from(value);
-        return value;
-      }),
-    );
-  }
+// Save session
+function saveSession() {
+  localStorage.setItem(
+    "atomsNinjaCurrentSession",
+    JSON.stringify(currentSession, (key, value) => {
+      if (value instanceof Set) return Array.from(value);
+      return value;
+    }),
+  );
+}
 
-  // Generate session summary
-  function getSessionSummary() {
-    return `
+// Generate session summary
+function getSessionSummary() {
+  return `
 SESSION INTELLIGENCE:
 • Targets Scanned: ${currentSession.targets.size} (${Array.from(currentSession.targets).join(", ")})
 • Tools Used: ${Array.from(currentSession.toolsUsed).join(", ")}
@@ -168,81 +168,81 @@ SESSION INTELLIGENCE:
 • Vulnerabilities Found: ${currentSession.vulnerabilities.length}
 • Session Duration: ${Math.round((Date.now() - currentSession.id) / 1000 / 60)} minutes
 `;
+}
+
+// Enhanced chat interaction saving
+function saveChatInteraction(
+  userInput,
+  aiResponse,
+  commandExecuted = null,
+  scanResult = null,
+) {
+  const interaction = {
+    timestamp: new Date().toISOString(),
+    user: userInput,
+    ai: aiResponse,
+    command: commandExecuted,
+    scanResult: scanResult ? scanResult.substring(0, 300) : null,
+  };
+
+  chatHistory.push(interaction);
+
+  // Track targets from command
+  if (commandExecuted) {
+    trackTarget(commandExecuted);
+
+    // Extract tool name
+    const tool = commandExecuted.split(" ")[0];
+    if (scanResult) {
+      saveFinding(tool, "extracted-target", scanResult);
+    }
   }
 
-  // Enhanced chat interaction saving
-  function saveChatInteraction(
-    userInput,
-    aiResponse,
-    commandExecuted = null,
-    scanResult = null,
-  ) {
-    const interaction = {
-      timestamp: new Date().toISOString(),
-      user: userInput,
-      ai: aiResponse,
-      command: commandExecuted,
-      scanResult: scanResult ? scanResult.substring(0, 300) : null,
-    };
+  // Keep only last MAX_CHAT_HISTORY interactions
+  if (chatHistory.length > MAX_CHAT_HISTORY) {
+    chatHistory.shift();
+  }
 
-    chatHistory.push(interaction);
+  // Save to localStorage
+  localStorage.setItem("atomsNinjaChatHistory", JSON.stringify(chatHistory));
+}
 
-    // Track targets from command
-    if (commandExecuted) {
-      trackTarget(commandExecuted);
+// Load chat history from localStorage
+function loadChatHistory() {
+  const saved = localStorage.getItem("atomsNinjaChatHistory");
+  if (saved) {
+    try {
+      chatHistory = JSON.parse(saved);
+    } catch (e) {
+      console.error("Failed to load chat history:", e);
+      chatHistory = [];
+    }
+  }
+}
 
-      // Extract tool name
-      const tool = commandExecuted.split(" ")[0];
-      if (scanResult) {
-        saveFinding(tool, "extracted-target", scanResult);
+// Advanced context with session intelligence
+function getChatContext() {
+  if (chatHistory.length === 0) return "";
+
+  // Recent conversation
+  const recentContext = chatHistory
+    .slice(-5)
+    .map((interaction) => {
+      let ctx = `User: ${interaction.user}\nAI: ${interaction.ai.substring(0, 200)}`;
+      if (interaction.command) {
+        ctx += `\nExecuted: ${interaction.command}`;
       }
-    }
-
-    // Keep only last MAX_CHAT_HISTORY interactions
-    if (chatHistory.length > MAX_CHAT_HISTORY) {
-      chatHistory.shift();
-    }
-
-    // Save to localStorage
-    localStorage.setItem("atomsNinjaChatHistory", JSON.stringify(chatHistory));
-  }
-
-  // Load chat history from localStorage
-  function loadChatHistory() {
-    const saved = localStorage.getItem("atomsNinjaChatHistory");
-    if (saved) {
-      try {
-        chatHistory = JSON.parse(saved);
-      } catch (e) {
-        console.error("Failed to load chat history:", e);
-        chatHistory = [];
+      if (interaction.scanResult) {
+        ctx += `\nResult: ${interaction.scanResult.substring(0, 100)}...`;
       }
-    }
-  }
+      return ctx;
+    })
+    .join("\n---\n");
 
-  // Advanced context with session intelligence
-  function getChatContext() {
-    if (chatHistory.length === 0) return "";
+  // Session intelligence
+  const sessionIntel = getSessionSummary();
 
-    // Recent conversation
-    const recentContext = chatHistory
-      .slice(-5)
-      .map((interaction) => {
-        let ctx = `User: ${interaction.user}\nAI: ${interaction.ai.substring(0, 200)}`;
-        if (interaction.command) {
-          ctx += `\nExecuted: ${interaction.command}`;
-        }
-        if (interaction.scanResult) {
-          ctx += `\nResult: ${interaction.scanResult.substring(0, 100)}...`;
-        }
-        return ctx;
-      })
-      .join("\n---\n");
-
-    // Session intelligence
-    const sessionIntel = getSessionSummary();
-
-    return `
+  return `
 RECENT CONVERSATION HISTORY:
 ${recentContext}
 
@@ -256,1035 +256,1026 @@ INSTRUCTIONS:
 - If vulnerabilities detected, prioritize mentioning them
 - Track the progression: Recon → Enumeration → Exploitation → Post-Exploitation
 `;
-  }
+}
 
-  // Add terminal line
-  function addTerminalLine(text, type = "text") {
-    const line = document.createElement("div");
-    line.className = "terminal-line";
+// Add terminal line
+function addTerminalLine(text, type = "text") {
+  const line = document.createElement("div");
+  line.className = "terminal-line";
 
-    const prompt = document.createElement("span");
-    prompt.className = "terminal-prompt";
-    prompt.textContent = "atom@ninja:~#";
+  const prompt = document.createElement("span");
+  prompt.className = "terminal-prompt";
+  prompt.textContent = "atom@ninja:~#";
 
-    const textSpan = document.createElement("span");
-    textSpan.className = `terminal-${type}`;
+  const textSpan = document.createElement("span");
+  textSpan.className = `terminal-${type}`;
 
-    // Handle long output - show full results with scrolling
-    if (text.length > 500) {
-      const lines = text.split("\n");
-      lines.forEach((line, idx) => {
-        const lineSpan = document.createElement("div");
-        lineSpan.textContent = line;
-        lineSpan.style.whiteSpace = "pre-wrap";
-        lineSpan.style.wordBreak = "break-word";
-        textSpan.appendChild(lineSpan);
-      });
-    } else {
-      textSpan.textContent = text;
-    }
-    textSpan.style.whiteSpace = "pre-wrap";
-    textSpan.style.wordBreak = "break-word";
-
-    line.appendChild(prompt);
-    line.appendChild(textSpan);
-
-    // Remove cursor before adding new line
-    const cursor = terminalOutput.querySelector(".terminal-cursor");
-    if (cursor) cursor.remove();
-
-    terminalOutput.appendChild(line);
-
-    // Add cursor back
-    const newCursor = document.createElement("div");
-    newCursor.className = "terminal-cursor";
-    newCursor.textContent = "_";
-    terminalOutput.appendChild(newCursor);
-
-    // Scroll to bottom
-    terminalOutput.scrollTop = terminalOutput.scrollHeight;
-  }
-
-  // Add AI Thinking Chain — Collapsible view showing reasoning
-  function addThinkingChain(thinkingSteps) {
-    if (!thinkingSteps || !thinkingSteps.length) return;
-
-    const details = document.createElement("details");
-    details.className = "thinking-chain";
-
-    const summary = document.createElement("summary");
-    summary.textContent = `Atom's Thought Process (${thinkingSteps.length} steps)`;
-    details.appendChild(summary);
-
-    const stepsContainer = document.createElement("div");
-    stepsContainer.className = "thinking-steps";
-
-    thinkingSteps.forEach((step) => {
-      const stepDiv = document.createElement("div");
-      stepDiv.className = "thinking-step";
-
-      const titleDiv = document.createElement("div");
-      titleDiv.className = "thinking-step-title";
-      titleDiv.textContent = `Step ${step.step}: ${step.title}`;
-
-      const contentDiv = document.createElement("div");
-      contentDiv.className = "thinking-step-content";
-      contentDiv.textContent = step.content;
-
-      stepDiv.appendChild(titleDiv);
-      stepDiv.appendChild(contentDiv);
-      stepsContainer.appendChild(stepDiv);
+  // Handle long output - show full results with scrolling
+  if (text.length > 500) {
+    const lines = text.split("\n");
+    lines.forEach((line, idx) => {
+      const lineSpan = document.createElement("div");
+      lineSpan.textContent = line;
+      lineSpan.style.whiteSpace = "pre-wrap";
+      lineSpan.style.wordBreak = "break-word";
+      textSpan.appendChild(lineSpan);
     });
-
-    details.appendChild(stepsContainer);
-
-    // Remove cursor, add thinking chain, add cursor back
-    const cursor = terminalOutput.querySelector(".terminal-cursor");
-    if (cursor) cursor.remove();
-
-    terminalOutput.appendChild(details);
-
-    const newCursor = document.createElement("div");
-    newCursor.className = "terminal-cursor";
-    newCursor.textContent = "_";
-    terminalOutput.appendChild(newCursor);
-
-    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+  } else {
+    textSpan.textContent = text;
   }
+  textSpan.style.whiteSpace = "pre-wrap";
+  textSpan.style.wordBreak = "break-word";
 
-  // Simulate command execution
-  async function executeCommand(command) {
-    if (isExecuting || !command.trim()) return;
+  line.appendChild(prompt);
+  line.appendChild(textSpan);
 
-    isExecuting = true;
-    executeBtn.textContent = "Executing...";
-    executeBtn.style.opacity = "0.7";
+  // Remove cursor before adding new line
+  const cursor = terminalOutput.querySelector(".terminal-cursor");
+  if (cursor) cursor.remove();
 
-    // Add command to history
-    commandHistory.unshift(command);
-    historyIndex = -1;
+  terminalOutput.appendChild(line);
 
-    // Display the command
-    addTerminalLine(`Executing: ${command}`, "info");
+  // Add cursor back
+  const newCursor = document.createElement("div");
+  newCursor.className = "terminal-cursor";
+  newCursor.textContent = "_";
+  terminalOutput.appendChild(newCursor);
 
-    // Simulate processing
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+  // Scroll to bottom
+  terminalOutput.scrollTop = terminalOutput.scrollHeight;
+}
 
-    // Parse and execute command
-    const result = await processCommand(command);
-    addTerminalLine(result.message, result.type);
+// Add AI Thinking Chain — Collapsible view showing reasoning
+function addThinkingChain(thinkingSteps) {
+  if (!thinkingSteps || !thinkingSteps.length) return;
 
-    // Clear input
-    commandInput.value = "";
+  const details = document.createElement("details");
+  details.className = "thinking-chain";
 
-    isExecuting = false;
-    executeBtn.innerHTML = `
+  const summary = document.createElement("summary");
+  summary.textContent = `Atom's Thought Process (${thinkingSteps.length} steps)`;
+  details.appendChild(summary);
+
+  const stepsContainer = document.createElement("div");
+  stepsContainer.className = "thinking-steps";
+
+  thinkingSteps.forEach((step) => {
+    const stepDiv = document.createElement("div");
+    stepDiv.className = "thinking-step";
+
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "thinking-step-title";
+    titleDiv.textContent = `Step ${step.step}: ${step.title}`;
+
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "thinking-step-content";
+    contentDiv.textContent = step.content;
+
+    stepDiv.appendChild(titleDiv);
+    stepDiv.appendChild(contentDiv);
+    stepsContainer.appendChild(stepDiv);
+  });
+
+  details.appendChild(stepsContainer);
+
+  // Remove cursor, add thinking chain, add cursor back
+  const cursor = terminalOutput.querySelector(".terminal-cursor");
+  if (cursor) cursor.remove();
+
+  terminalOutput.appendChild(details);
+
+  const newCursor = document.createElement("div");
+  newCursor.className = "terminal-cursor";
+  newCursor.textContent = "_";
+  terminalOutput.appendChild(newCursor);
+
+  terminalOutput.scrollTop = terminalOutput.scrollHeight;
+}
+
+// Execute command
+async function executeCommand(command) {
+  if (isExecuting || !command.trim()) return;
+
+  isExecuting = true;
+  executeBtn.textContent = "Executing...";
+  executeBtn.style.opacity = "0.7";
+
+  // Add command to history
+  commandHistory.unshift(command);
+  historyIndex = -1;
+
+  // Display the command
+  addTerminalLine(`Executing: ${command}`, "info");
+
+  // Initial processing delay
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  // Parse and execute command
+  const result = await processCommand(command);
+  addTerminalLine(result.message, result.type);
+
+  // Clear input
+  commandInput.value = "";
+
+  isExecuting = false;
+  executeBtn.innerHTML = `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="5 3 19 12 5 21 5 3"/>
         </svg>
         Execute
     `;
-    executeBtn.style.opacity = "1";
+  executeBtn.style.opacity = "1";
+}
+
+// Process commands with intelligent routing
+async function processCommand(command) {
+  const cmd = command.toLowerCase().trim();
+
+  // Direct command patterns - bypass AI for obvious tool requests
+  const directPatterns = [
+    // OS Detection
+    {
+      pattern: /find\s+os\s+of\s+(\S+)/,
+      tool: "nmap",
+      flags: "-O",
+      explanation: "OS detection scan",
+    },
+    {
+      pattern: /detect\s+os\s+(?:on|of)\s+(\S+)/,
+      tool: "nmap",
+      flags: "-O",
+      explanation: "OS detection scan",
+    },
+    {
+      pattern:
+        /what\s+os\s+(?:is\s+)?(?:running\s+)?(?:on|of)\s+(?:that\s+ip|the\s+same\s+ip|(\S+))/,
+      tool: "nmap",
+      flags: "-O",
+      explanation: "OS detection scan",
+      extractTarget: true,
+    },
+
+    // Port Scanning
+    {
+      pattern:
+        /find\s+(?:all\s+)?open\s+ports?\s+(?:on|of)\s+(?:that\s+ip|the\s+same\s+ip|(\S+))/,
+      tool: "nmap",
+      flags: "-p-",
+      explanation: "Full port scan (all 65535 ports)",
+      extractTarget: true,
+    },
+    {
+      pattern: /scan\s+(?:all\s+)?ports?\s+(?:on|of)\s+(\S+)/,
+      tool: "nmap",
+      flags: "-p-",
+      explanation: "Full port scan",
+    },
+    {
+      pattern:
+        /(?:what|which)\s+ports?\s+(?:are|is)\s+open\s+(?:on|of)\s+(?:that\s+ip|the\s+same\s+ip|(\S+))/,
+      tool: "nmap",
+      flags: "-p-",
+      explanation: "Full port scan",
+      extractTarget: true,
+    },
+    {
+      pattern: /scan\s+ports?\s+(?:on|of)\s+(\S+)/,
+      tool: "nmap",
+      flags: "",
+      explanation: "Port scan",
+    },
+    {
+      pattern: /scan\s+(\d+\.\d+\.\d+\.\d+|[\w\-\.]+)/,
+      tool: "nmap",
+      flags: "",
+      explanation: "Port scan",
+    },
+
+    // Web Server Detection
+    {
+      pattern:
+        /(?:what|which)\s+web\s+server\s+(?:is\s+)?(?:running\s+)?(?:on|of)\s+(?:that\s+ip|the\s+same\s+ip|(\S+))/,
+      tool: "whatweb",
+      flags: "",
+      explanation: "Web technology detection",
+      extractTarget: true,
+    },
+    {
+      pattern:
+        /check\s+web\s+server\s+(?:on|of)\s+(?:that\s+ip|the\s+same\s+ip|(\S+))/,
+      tool: "whatweb",
+      flags: "",
+      explanation: "Web technology detection",
+      extractTarget: true,
+    },
+    {
+      pattern:
+        /(?:what|which)\s+(?:services|software)\s+(?:are|is)\s+running\s+(?:on|of)\s+(?:that\s+ip|the\s+same\s+ip|(\S+))/,
+      tool: "nmap",
+      flags: "-sV",
+      explanation: "Service version detection",
+      extractTarget: true,
+    },
+
+    // Vulnerabilities
+    {
+      pattern: /(?:find|check|scan)\s+vulnerabilities?\s+(?:on|of)\s+(http\S+)/,
+      tool: "nikto",
+      flags: "-h",
+      explanation: "Web vulnerability scan",
+    },
+    {
+      pattern:
+        /(?:what|which)\s+vulnerabilities?\s+(?:are\s+)?(?:on|of)\s+(http\S+)/,
+      tool: "nikto",
+      flags: "-h",
+      explanation: "Web vulnerability scan",
+    },
+
+    // Directory Enumeration
+    {
+      pattern: /enumerate\s+directories?\s+(?:on|of)\s+(http\S+)/,
+      tool: "dirb",
+      flags: "",
+      explanation: "Directory enumeration",
+    },
+    {
+      pattern: /find\s+directories?\s+(?:on|of)\s+(http\S+)/,
+      tool: "dirb",
+      flags: "",
+      explanation: "Directory enumeration",
+    },
+
+    // Subdomain Discovery
+    {
+      pattern: /find\s+subdomains?\s+(?:of|for)\s+(\S+)/,
+      tool: "sublist3r",
+      flags: "-d",
+      explanation: "Subdomain enumeration",
+    },
+  ];
+
+  // Check direct patterns first
+  for (const {
+    pattern,
+    tool,
+    flags,
+    explanation,
+    extractTarget,
+  } of directPatterns) {
+    const match = cmd.match(pattern);
+    if (match) {
+      let target = match[1];
+
+      // Special case: "same ip" - extract from session history
+      if (extractTarget && (!target || target === "undefined")) {
+        // Try to get the last target from session
+        if (currentSession.targets.size > 0) {
+          target = Array.from(currentSession.targets)[
+            currentSession.targets.size - 1
+          ];
+        } else {
+          return {
+            message:
+              "⚠️ No previous target found. Please specify an IP address or domain.",
+            type: "warning",
+          };
+        }
+      }
+
+      const fullCommand = flags
+        ? `${tool} ${flags} ${target}`
+        : `${tool} ${target}`;
+      addTerminalLine(`💡 ${explanation}`, "info");
+      addTerminalLine(`⚡ Auto-executing: ${fullCommand}`, "info");
+      return await executeSecurityTool(fullCommand, tool);
+    }
   }
 
-  // Process commands with intelligent routing
-  async function processCommand(command) {
-    const cmd = command.toLowerCase().trim();
+  // List of Kali tools that should be executed directly
+  const kaliTools = [
+    "nmap",
+    "masscan",
+    "nikto",
+    "dirb",
+    "dirbuster",
+    "sqlmap",
+    "hydra",
+    "john",
+    "hashcat",
+    "metasploit",
+    "msfconsole",
+    "searchsploit",
+    "aircrack",
+    "wireshark",
+    "tcpdump",
+    "ettercap",
+    "burp",
+    "burpsuite",
+    "wpscan",
+    "whatweb",
+    "whois",
+    "dig",
+    "host",
+    "setoolkit",
+    "volatility",
+    "autopsy",
+    "foremost",
+    "hping3",
+    "medusa",
+    "xsser",
+    "commix",
+    "openvas",
+    "lynis",
+    "reaver",
+    "wifite",
+    "armitage",
+  ];
 
-    // Direct command patterns - bypass AI for obvious tool requests
-    const directPatterns = [
-      // OS Detection
-      {
-        pattern: /find\s+os\s+of\s+(\S+)/,
-        tool: "nmap",
-        flags: "-O",
-        explanation: "OS detection scan",
-      },
-      {
-        pattern: /detect\s+os\s+(?:on|of)\s+(\S+)/,
-        tool: "nmap",
-        flags: "-O",
-        explanation: "OS detection scan",
-      },
-      {
-        pattern:
-          /what\s+os\s+(?:is\s+)?(?:running\s+)?(?:on|of)\s+(?:that\s+ip|the\s+same\s+ip|(\S+))/,
-        tool: "nmap",
-        flags: "-O",
-        explanation: "OS detection scan",
-        extractTarget: true,
-      },
+  // Check if command starts with any Kali tool
+  const isDirectCommand = kaliTools.some((tool) => cmd.startsWith(tool));
 
-      // Port Scanning
-      {
-        pattern:
-          /find\s+(?:all\s+)?open\s+ports?\s+(?:on|of)\s+(?:that\s+ip|the\s+same\s+ip|(\S+))/,
-        tool: "nmap",
-        flags: "-p-",
-        explanation: "Full port scan (all 65535 ports)",
-        extractTarget: true,
-      },
-      {
-        pattern: /scan\s+(?:all\s+)?ports?\s+(?:on|of)\s+(\S+)/,
-        tool: "nmap",
-        flags: "-p-",
-        explanation: "Full port scan",
-      },
-      {
-        pattern:
-          /(?:what|which)\s+ports?\s+(?:are|is)\s+open\s+(?:on|of)\s+(?:that\s+ip|the\s+same\s+ip|(\S+))/,
-        tool: "nmap",
-        flags: "-p-",
-        explanation: "Full port scan",
-        extractTarget: true,
-      },
-      {
-        pattern: /scan\s+ports?\s+(?:on|of)\s+(\S+)/,
-        tool: "nmap",
-        flags: "",
-        explanation: "Port scan",
-      },
-      {
-        pattern: /scan\s+(\d+\.\d+\.\d+\.\d+|[\w\-\.]+)/,
-        tool: "nmap",
-        flags: "",
-        explanation: "Port scan",
-      },
-
-      // Web Server Detection
-      {
-        pattern:
-          /(?:what|which)\s+web\s+server\s+(?:is\s+)?(?:running\s+)?(?:on|of)\s+(?:that\s+ip|the\s+same\s+ip|(\S+))/,
-        tool: "whatweb",
-        flags: "",
-        explanation: "Web technology detection",
-        extractTarget: true,
-      },
-      {
-        pattern:
-          /check\s+web\s+server\s+(?:on|of)\s+(?:that\s+ip|the\s+same\s+ip|(\S+))/,
-        tool: "whatweb",
-        flags: "",
-        explanation: "Web technology detection",
-        extractTarget: true,
-      },
-      {
-        pattern:
-          /(?:what|which)\s+(?:services|software)\s+(?:are|is)\s+running\s+(?:on|of)\s+(?:that\s+ip|the\s+same\s+ip|(\S+))/,
-        tool: "nmap",
-        flags: "-sV",
-        explanation: "Service version detection",
-        extractTarget: true,
-      },
-
-      // Vulnerabilities
-      {
-        pattern:
-          /(?:find|check|scan)\s+vulnerabilities?\s+(?:on|of)\s+(http\S+)/,
-        tool: "nikto",
-        flags: "-h",
-        explanation: "Web vulnerability scan",
-      },
-      {
-        pattern:
-          /(?:what|which)\s+vulnerabilities?\s+(?:are\s+)?(?:on|of)\s+(http\S+)/,
-        tool: "nikto",
-        flags: "-h",
-        explanation: "Web vulnerability scan",
-      },
-
-      // Directory Enumeration
-      {
-        pattern: /enumerate\s+directories?\s+(?:on|of)\s+(http\S+)/,
-        tool: "dirb",
-        flags: "",
-        explanation: "Directory enumeration",
-      },
-      {
-        pattern: /find\s+directories?\s+(?:on|of)\s+(http\S+)/,
-        tool: "dirb",
-        flags: "",
-        explanation: "Directory enumeration",
-      },
-
-      // Subdomain Discovery
-      {
-        pattern: /find\s+subdomains?\s+(?:of|for)\s+(\S+)/,
-        tool: "sublist3r",
-        flags: "-d",
-        explanation: "Subdomain enumeration",
-      },
-    ];
-
-    // Check direct patterns first
-    for (const {
-      pattern,
-      tool,
-      flags,
-      explanation,
-      extractTarget,
-    } of directPatterns) {
-      const match = cmd.match(pattern);
-      if (match) {
-        let target = match[1];
-
-        // Special case: "same ip" - extract from session history
-        if (extractTarget && (!target || target === "undefined")) {
-          // Try to get the last target from session
-          if (currentSession.targets.size > 0) {
-            target = Array.from(currentSession.targets)[
-              currentSession.targets.size - 1
-            ];
-          } else {
-            return {
-              message:
-                "⚠️ No previous target found. Please specify an IP address or domain.",
-              type: "warning",
-            };
-          }
-        }
-
-        const fullCommand = flags
-          ? `${tool} ${flags} ${target}`
-          : `${tool} ${target}`;
-        addTerminalLine(`💡 ${explanation}`, "info");
-        addTerminalLine(`⚡ Auto-executing: ${fullCommand}`, "info");
-        return await executeSecurityTool(fullCommand, tool);
-      }
-    }
-
-    // List of Kali tools that should be executed directly
-    const kaliTools = [
-      "nmap",
-      "masscan",
-      "nikto",
-      "dirb",
-      "dirbuster",
-      "sqlmap",
-      "hydra",
-      "john",
-      "hashcat",
-      "metasploit",
-      "msfconsole",
-      "searchsploit",
-      "aircrack",
-      "wireshark",
-      "tcpdump",
-      "ettercap",
-      "burp",
-      "burpsuite",
-      "wpscan",
-      "whatweb",
-      "whois",
-      "dig",
-      "host",
-      "setoolkit",
-      "volatility",
-      "autopsy",
-      "foremost",
-      "hping3",
-      "medusa",
-      "xsser",
-      "commix",
-      "openvas",
-      "lynis",
-      "reaver",
-      "wifite",
-      "armitage",
-    ];
-
-    // Check if command starts with any Kali tool
-    const isDirectCommand = kaliTools.some((tool) => cmd.startsWith(tool));
-
-    if (isDirectCommand) {
-      // Direct execution of security tools
-      if (
-        cmd.includes("nmap") &&
-        !cmd.includes("how") &&
-        !cmd.includes("what") &&
-        !cmd.includes("explain")
-      ) {
-        return await executeSecurityTool(command, "nmap");
-      } else if (
-        cmd.includes("scan") &&
-        !cmd.includes("how") &&
-        !cmd.includes("what")
-      ) {
-        return await simulateScan(command);
-      } else if (cmd.includes("sqlmap")) {
-        return await executeSecurityTool(command, "sqlmap");
-      } else if (cmd.includes("nikto")) {
-        return await executeSecurityTool(command, "nikto");
-      } else if (cmd.includes("hydra")) {
-        return await executeSecurityTool(command, "hydra");
-      } else if (cmd.includes("searchsploit")) {
-        return await executeSecurityTool(command, "searchsploit");
-      } else if (cmd.includes("metasploit") || cmd.includes("msfconsole")) {
-        return {
-          message:
-            '🎯 Metasploit Framework loaded. Type "search <term>" to find exploits or "use <exploit>" to select a module.\n\nNote: Interactive console features coming soon!',
-          type: "success",
-        };
-      } else if (cmd.includes("wireshark")) {
-        return {
-          message:
-            "🔍 Wireshark packet analyzer ready. Starting network capture...\n\nNote: GUI tools are simulated. Use tcpdump for actual packet capture.",
-          type: "info",
-        };
-      } else if (cmd.includes("burp")) {
-        return {
-          message:
-            "🕷️ Burp Suite proxy started on localhost:8080.\n\nConfigure your browser proxy settings to use Burp as intercepting proxy.",
-          type: "info",
-        };
-      } else if (cmd.includes("tcpdump")) {
-        return await executeSecurityTool(command, "tcpdump");
-      } else {
-        // Generic tool execution
-        return await executeSecurityTool(command, cmd.split(" ")[0]);
-      }
-    } else if (cmd === "help") {
+  if (isDirectCommand) {
+    // Direct execution of security tools
+    if (
+      cmd.includes("nmap") &&
+      !cmd.includes("how") &&
+      !cmd.includes("what") &&
+      !cmd.includes("explain")
+    ) {
+      return await executeSecurityTool(command, "nmap");
+    } else if (
+      cmd.includes("scan") &&
+      !cmd.includes("how") &&
+      !cmd.includes("what")
+    ) {
+      return await executeScan(command);
+    } else if (cmd.includes("sqlmap")) {
+      return await executeSecurityTool(command, "sqlmap");
+    } else if (cmd.includes("nikto")) {
+      return await executeSecurityTool(command, "nikto");
+    } else if (cmd.includes("hydra")) {
+      return await executeSecurityTool(command, "hydra");
+    } else if (cmd.includes("searchsploit")) {
+      return await executeSecurityTool(command, "searchsploit");
+    } else if (cmd.includes("metasploit") || cmd.includes("msfconsole")) {
       return {
         message:
-          '🤖 Atom at your service, Chief.\n\nTalk naturally:\n• "check os on 192.168.1.1"\n• "scan that target"\n• "find vulnerabilities"\n\nOr direct commands:\n• nmap, sqlmap, nikto, hydra\n\nNinja ready. What\'s the target?',
+          '🎯 Metasploit Framework initialized. Starting ninja-engine bridge...\n\nType "search <term>" to find exploits or "use <exploit>" to select a module.',
+        type: "success",
+      };
+    } else if (cmd.includes("wireshark")) {
+      return {
+        message:
+          "🔍 Wireshark engine ready. Diverting stream to tcpdump for CLI output...\n\nStarting network capture on eth0.",
         type: "info",
       };
-    } else {
-      // Everything else goes to AI for natural language processing
-      return await processWithAI(command);
-    }
-  }
-
-  // Generic security tool executor for ALL Kali tools
-  async function executeSecurityTool(command, toolName) {
-    addTerminalLine(`🔧 Initializing ${toolName}...`, "info");
-    addTerminalLine(`⚡ Executing: ${command}`, "info");
-    addTerminalLine("🔍 Connecting to Kali MCP, Chief...", "info");
-
-    try {
-      // Parse command into tool and arguments
-      const parts = command.trim().split(/\s+/);
-      const tool = parts[0]; // First part is the tool name
-      const args = parts.slice(1); // Rest are arguments
-
-      console.log("🔧 DEBUG - Tool:", tool, "Args:", args);
-      console.log("🔧 DEBUG - Endpoint:", CONFIG.KALI_MCP_ENDPOINT);
-
-      const response = await fetch(`${CONFIG.KALI_MCP_ENDPOINT}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tool: tool,
-          args: args,
-        }),
-      });
-
-      console.log("🔧 DEBUG - Response status:", response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("🔧 DEBUG - Error response:", errorText);
-        throw new Error(`MCP returned ${response.status}: ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log("🔧 DEBUG - Response data:", data);
-
-      const scanOutput = data.result || data.stdout || "";
-
-      // Store scan in session
-      atomSession.addScan(command, scanOutput);
-
-      // Auto-analyze for CVEs if it's a scan
-      if (toolName === "nmap" && scanOutput.length > 200) {
-        setTimeout(() => analyzeCVEs(scanOutput, command), 1000);
-      }
-
-      if (data.stderr && data.stderr.trim()) {
-        return {
-          message: `⚠️ ${toolName} warning:\n${data.stderr}\n\n${scanOutput}`,
-          type: "warning",
-          scanOutput,
-        };
-      }
-
+    } else if (cmd.includes("burp")) {
       return {
-        message: `✅ ${toolName} complete:\n\n${scanOutput}`,
-        type: "success",
+        message:
+          "🕷️ Burp Suite proxy started on localhost:8080.\n\nConfigure your browser proxy settings to use Burp as intercepting proxy.",
+        type: "info",
+      };
+    } else if (cmd.includes("tcpdump")) {
+      return await executeSecurityTool(command, "tcpdump");
+    } else {
+      // Generic tool execution
+      return await executeSecurityTool(command, cmd.split(" ")[0]);
+    }
+  } else if (cmd === "help") {
+    return {
+      message:
+        '🤖 Atom at your service, Chief.\n\nTalk naturally:\n• "check os on 192.168.1.1"\n• "scan that target"\n• "find vulnerabilities"\n\nOr direct commands:\n• nmap, sqlmap, nikto, hydra\n\nNinja ready. What\'s the target?',
+      type: "info",
+    };
+  } else {
+    // Everything else goes to AI for natural language processing
+    return await processWithAI(command);
+  }
+}
+
+// Generic security tool executor for ALL Kali tools
+async function executeSecurityTool(command, toolName) {
+  addTerminalLine(`🔧 Initializing ${toolName}...`, "info");
+  addTerminalLine(`⚡ Executing: ${command}`, "info");
+  addTerminalLine("🔍 Connecting to Kali MCP, Chief...", "info");
+
+  try {
+    // Parse command into tool and arguments
+    const parts = command.trim().split(/\s+/);
+    const tool = parts[0]; // First part is the tool name
+    const args = parts.slice(1); // Rest are arguments
+
+    console.log("🔧 DEBUG - Tool:", tool, "Args:", args);
+    console.log("🔧 DEBUG - Endpoint:", CONFIG.KALI_MCP_ENDPOINT);
+
+    const response = await fetch(`${CONFIG.KALI_MCP_ENDPOINT}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tool: tool,
+        args: args,
+      }),
+    });
+
+    console.log("🔧 DEBUG - Response status:", response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("🔧 DEBUG - Error response:", errorText);
+      throw new Error(`MCP returned ${response.status}: ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log("🔧 DEBUG - Response data:", data);
+
+    const scanOutput = data.result || data.stdout || "";
+
+    // Store scan in session
+    atomSession.addScan(command, scanOutput);
+
+    // Auto-analyze for CVEs if it's a scan
+    if (toolName === "nmap" && scanOutput.length > 200) {
+      setTimeout(() => analyzeCVEs(scanOutput, command), 1000);
+    }
+
+    if (data.stderr && data.stderr.trim()) {
+      return {
+        message: `⚠️ ${toolName} warning:\n${data.stderr}\n\n${scanOutput}`,
+        type: "warning",
         scanOutput,
       };
-    } catch (error) {
-      console.error("🔧 DEBUG - Full error:", error);
-      return {
-        message: `❌ ${toolName} failed: ${error.message}`,
-        type: "error",
-      };
     }
+
+    return {
+      message: `✅ ${toolName} complete:\n\n${scanOutput}`,
+      type: "success",
+      scanOutput,
+    };
+  } catch (error) {
+    console.error("🔧 DEBUG - Full error:", error);
+    return {
+      message: `❌ ${toolName} failed: ${error.message}`,
+      type: "error",
+    };
   }
+}
 
-  // Execute nmap scan - wrapper for backward compatibility
-  async function simulateNmap(command) {
-    return await executeSecurityTool(command, "nmap");
-  }
+async function executeNmap(command) {
+  return await executeSecurityTool(command, "nmap");
+}
 
-  // Execute scan via GCP MCP Server (through proxy in production)
-  async function simulateScan(command) {
-    addTerminalLine("🎯 Processing, Chief...", "info");
+async function executeScan(command) {
+  addTerminalLine("🎯 Processing, Chief...", "info");
 
-    try {
-      // Extract target from command
-      const parts = command.trim().split(/\s+/);
-      const target = parts[parts.length - 1];
-      const options = "-Pn -T4 -F"; // Fast scan for "scan" command
+  try {
+    // Extract target from command
+    const parts = command.trim().split(/\s+/);
+    const target = parts[parts.length - 1];
+    const options = "-Pn -T4 -F"; // Fast scan for "scan" command
 
-      addTerminalLine(`⚡ Executing: nmap ${options} ${target}`, "info");
-      addTerminalLine("🥷 Connecting to Ninja...", "info");
-      addTerminalLine(`⚡ Scanning ${target}...`, "info");
+    addTerminalLine(`⚡ Executing: nmap ${options} ${target}`, "info");
+    addTerminalLine("🥷 Connecting to Ninja...", "info");
+    addTerminalLine(`⚡ Scanning ${target}...`, "info");
 
-      // Fix: Use generic backend API URL instead of appending to KALI_MCP_ENDPOINT
-      const endpoint = `${CONFIG.BACKEND_API_URL}/tools/nmap`;
+    // Fix: Use generic backend API URL instead of appending to KALI_MCP_ENDPOINT
+    const endpoint = `${CONFIG.BACKEND_API_URL}/tools/nmap`;
 
-      console.log("🔧 DEBUG - Endpoint:", endpoint);
-      console.log("🔧 DEBUG - Target:", target, "Options:", options);
+    console.log("🔧 DEBUG - Endpoint:", endpoint);
+    console.log("🔧 DEBUG - Target:", target, "Options:", options);
 
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target, options }),
-      });
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target, options }),
+    });
 
-      console.log("🔧 DEBUG - Response status:", response.status);
+    console.log("🔧 DEBUG - Response status:", response.status);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("🔧 DEBUG - Error response:", errorText);
-        throw new Error(`MCP Server returned ${response.status}: ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log("🔧 DEBUG - Response data:", data);
-
-      if (data.stderr && data.stderr.trim()) {
-        return { message: `⚠️ Scan error:\n${data.stderr}`, type: "error" };
-      }
-
-      return {
-        message: `✅ Scan complete:\n\n${data.result || "No output received"}`,
-        type: "success",
-      };
-    } catch (error) {
-      console.error("🔧 DEBUG - Full error:", error);
-      console.error("🔧 DEBUG - Error message:", error.message);
-      console.error("🔧 DEBUG - Error stack:", error.stack);
-      return {
-        message: `❌ Mission failed, Chief: ${error.message}\n\nCheck browser console for details.`,
-        type: "error",
-      };
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("🔧 DEBUG - Error response:", errorText);
+      throw new Error(`MCP Server returned ${response.status}: ${errorText}`);
     }
+
+    const data = await response.json();
+    console.log("🔧 DEBUG - Response data:", data);
+
+    if (data.stderr && data.stderr.trim()) {
+      return { message: `⚠️ Scan error:\n${data.stderr}`, type: "error" };
+    }
+
+    return {
+      message: `✅ Scan complete:\n\n${data.result || "No output received"}`,
+      type: "success",
+    };
+  } catch (error) {
+    console.error("🔧 DEBUG - Full error:", error);
+    console.error("🔧 DEBUG - Error message:", error.message);
+    console.error("🔧 DEBUG - Error stack:", error.stack);
+    return {
+      message: `❌ Mission failed, Chief: ${error.message}\n\nCheck browser console for details.`,
+      type: "error",
+    };
   }
+}
 
-  // Process with AI (Google Gemini) - Atom Personality
-  async function processWithAI(command) {
-    try {
-      // Detect if this is a task request using shared config
-      const isTaskRequest = SHARED_CONFIG.TASK_KEYWORDS.some((kw) =>
-        command.toLowerCase().includes(kw),
+// Process with AI (Google Gemini) - Atom Personality
+async function processWithAI(command) {
+  try {
+    // Detect if this is a task request using shared config
+    const isTaskRequest = SHARED_CONFIG.TASK_KEYWORDS.some((kw) =>
+      command.toLowerCase().includes(kw),
+    );
+
+    // Switch from nerdy to action mode if task detected
+    if (conversationMode === "nerdy" && isTaskRequest) {
+      conversationMode = "action";
+      addTerminalLine(
+        "⚡ Switching to ACTION MODE - Initializing MCP server...",
+        "success",
       );
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
 
-      // Switch from nerdy to action mode if task detected
-      if (conversationMode === "nerdy" && isTaskRequest) {
-        conversationMode = "action";
-        addTerminalLine(
-          "⚡ Switching to ACTION MODE - Initializing MCP server...",
-          "success",
-        );
-        await new Promise((resolve) => setTimeout(resolve, 500));
-      }
+    addTerminalLine("🤖 Atom analyzing...", "info");
 
-      addTerminalLine("🤖 Atom analyzing...", "info");
+    // Get chat context
+    const chatContext = getChatContext();
 
-      // Get chat context
-      const chatContext = getChatContext();
+    // Detect AI mode based on query criticality
+    const criticalKeywords = [
+      "vulnerability",
+      "exploit",
+      "attack chain",
+      "critical",
+      "advanced",
+      "find all",
+    ];
+    const isCritical = criticalKeywords.some((kw) =>
+      command.toLowerCase().includes(kw),
+    );
+    const aiMode = isCritical ? "accurate" : CONFIG.AI_MODE;
 
-      // Detect AI mode based on query criticality
-      const criticalKeywords = [
-        "vulnerability",
-        "exploit",
-        "attack chain",
-        "critical",
-        "advanced",
-        "find all",
-      ];
-      const isCritical = criticalKeywords.some((kw) =>
-        command.toLowerCase().includes(kw),
-      );
-      const aiMode = isCritical ? "accurate" : CONFIG.AI_MODE;
+    if (aiMode === "accurate") {
+      addTerminalLine("🎯 Using ACCURATE mode (multi-AI consensus)...", "info");
+    }
 
-      if (aiMode === "accurate") {
-        addTerminalLine(
-          "🎯 Using ACCURATE mode (multi-AI consensus)...",
-          "info",
-        );
-      }
+    // Call Multi-AI endpoint
+    const response = await fetch(CONFIG.AI_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: command,
+        chatHistory: chatHistory.map((h) => ({
+          role: h.user ? "user" : "model",
+          content: h.user || h.ai,
+        })),
+        sessionData: currentSession,
+        mode: aiMode,
+      }),
+    });
 
-      // Call Multi-AI endpoint
-      const response = await fetch(CONFIG.AI_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("Multi-AI API Error:", errorData);
+
+      // Fallback to OpenAI endpoint if multi-AI fails
+      console.log("⚠️  Falling back to OpenAI endpoint...");
+      const fallbackResponse = await fetch(
+        `${CONFIG.BACKEND_API_URL}/openrouter`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: command,
+            chatHistory: chatHistory.map((h) => ({
+              role: h.user ? "user" : "model",
+              content: h.user || h.ai,
+            })),
+            sessionData: currentSession,
+          }),
         },
-        body: JSON.stringify({
-          message: command,
-          chatHistory: chatHistory.map((h) => ({
-            role: h.user ? "user" : "model",
-            content: h.user || h.ai,
-          })),
-          sessionData: currentSession,
-          mode: aiMode,
-        }),
-      });
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("Multi-AI API Error:", errorData);
-
-        // Fallback to OpenAI endpoint if multi-AI fails
-        console.log("⚠️  Falling back to OpenAI endpoint...");
-        const fallbackResponse = await fetch(
-          `${CONFIG.BACKEND_API_URL}/openrouter`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              message: command,
-              chatHistory: chatHistory.map((h) => ({
-                role: h.user ? "user" : "model",
-                content: h.user || h.ai,
-              })),
-              sessionData: currentSession,
-            }),
-          },
-        );
-
-        if (!fallbackResponse.ok) {
-          throw new Error("All AI endpoints failed");
-        }
-
-        const fallbackData = await fallbackResponse.json();
-        return await handleAIResponse(command, fallbackData);
+      if (!fallbackResponse.ok) {
+        throw new Error("All AI endpoints failed");
       }
 
-      const data = await response.json();
+      const fallbackData = await fallbackResponse.json();
+      return await handleAIResponse(command, fallbackData);
+    }
 
-      // Show AI thinking chain (collapsible)
-      if (data.thinking && data.thinking.length > 0) {
-        addThinkingChain(data.thinking);
-      }
+    const data = await response.json();
 
-      // Show AI metadata
-      const ninjaRank =
-        data.provider === "openrouter"
-          ? "Ninja Shinobi"
-          : data.provider === "bedrock"
-            ? "Ninja Jōnin"
-            : "Ninja";
-      if (data.consensus) {
+    // Show AI thinking chain (collapsible)
+    if (data.thinking && data.thinking.length > 0) {
+      addThinkingChain(data.thinking);
+    }
+
+    // Show AI metadata
+    const ninjaRank =
+      data.provider === "openrouter"
+        ? "Ninja Shinobi"
+        : data.provider === "bedrock"
+          ? "Ninja Jōnin"
+          : "Ninja";
+    if (data.consensus) {
+      addTerminalLine(
+        `🎯 Consensus response (${data.confidence}% confidence, ${ninjaRank})`,
+        "success",
+      );
+    } else {
+      addTerminalLine(`🤖 ${ninjaRank} responds...`, "info");
+    }
+
+    // If backend already executed the tool and returned output, show it directly
+    if (data.toolOutput && data.toolOutput.result) {
+      addTerminalLine(`⚡ Auto-executed: ${data.autoExecute.command}`, "info");
+      const output = data.toolOutput.result;
+      if (output.length > 0) {
         addTerminalLine(
-          `🎯 Consensus response (${data.confidence}% confidence, ${ninjaRank})`,
+          `✅ ${data.autoExecute.command.split(" ")[0]} complete:\n\n${output}`,
           "success",
         );
-      } else {
-        addTerminalLine(`🤖 ${ninjaRank} responds...`, "info");
       }
+      if (data.toolOutput.stderr) {
+        addTerminalLine(`⚠️ ${data.toolOutput.stderr}`, "warning");
+      }
+      saveChatInteraction(
+        command,
+        data.response,
+        data.autoExecute.command,
+        output,
+      );
+      return { message: "", type: "text" };
+    }
+    if (data.toolError) {
+      addTerminalLine(`❌ Tool execution failed: ${data.toolError}`, "error");
+    }
 
-      // If backend already executed the tool and returned output, show it directly
-      if (data.toolOutput && data.toolOutput.result) {
+    return await handleAIResponse(command, data);
+  } catch (error) {
+    console.error("AI Processing error:", error);
+    return {
+      message: `⚠️ AI error: ${error.message}`,
+      type: "error",
+    };
+  }
+}
+
+// Handle AI response (extracted for reuse)
+async function handleAIResponse(command, data) {
+  try {
+    // If backend provided a parsed autoExecute command, run it immediately
+    if (
+      data.autoExecute &&
+      data.autoExecute.action === "execute" &&
+      data.autoExecute.command
+    ) {
+      const a = data.autoExecute;
+      let attempts = 0;
+      let maxAttempts = 3;
+      let currentCommand = a.command;
+      let currentExplanation = a.explanation;
+      let lastOutput = "";
+
+      // Multi-iteration loop until success or max attempts
+      while (attempts < maxAttempts) {
+        attempts++;
+
+        addTerminalLine(`💡 ${currentExplanation}`, "info");
         addTerminalLine(
-          `⚡ Auto-executed: ${data.autoExecute.command}`,
+          `⚡ ${attempts > 1 ? "Attempt " + attempts + ": " : "Auto-executing: "}${currentCommand}`,
           "info",
         );
-        const output = data.toolOutput.result;
-        if (output.length > 0) {
-          addTerminalLine(
-            `✅ ${data.autoExecute.command.split(" ")[0]} complete:\n\n${output}`,
-            "success",
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        const result = await processCommand(currentCommand);
+        lastOutput = result.message || "";
+
+        // Check for success indicators
+        const hasVulnerabilities =
+          lastOutput.includes("VULNERABLE") ||
+          lastOutput.includes("vulnerable") ||
+          lastOutput.includes("exploit") ||
+          lastOutput.includes("CVE-") ||
+          (lastOutput.includes("open") && lastOutput.length > 300);
+
+        // Check for failures
+        const hostDown =
+          lastOutput.includes("Host seems down") ||
+          lastOutput.includes("Note: Host seems down");
+        const noHostsUp = lastOutput.includes("0 hosts up");
+        const timeout =
+          lastOutput.includes("timeout") || lastOutput.includes("timed out");
+        const refused =
+          lastOutput.includes("refused") || lastOutput.includes("filtered");
+        const noResults = lastOutput.length < 200 && !hasVulnerabilities;
+
+        // SUCCESS - Found vulnerabilities or good results
+        if (
+          hasVulnerabilities ||
+          (lastOutput.length > 300 && !hostDown && !noHostsUp)
+        ) {
+          addTerminalLine("✅ Found results!", "success");
+          saveChatInteraction(
+            command,
+            `Success after ${attempts} attempt(s)`,
+            currentCommand,
+            lastOutput,
           );
+          return result;
         }
-        if (data.toolOutput.stderr) {
-          addTerminalLine(`⚠️ ${data.toolOutput.stderr}`, "warning");
-        }
-        saveChatInteraction(
-          command,
-          data.response,
-          data.autoExecute.command,
-          output,
-        );
-        return { message: "", type: "text" };
-      }
-      if (data.toolError) {
-        addTerminalLine(`❌ Tool execution failed: ${data.toolError}`, "error");
-      }
 
-      return await handleAIResponse(command, data);
-    } catch (error) {
-      console.error("AI Processing error:", error);
-      return {
-        message: `⚠️ AI error: ${error.message}`,
-        type: "error",
-      };
-    }
-  }
-
-  // Handle AI response (extracted for reuse)
-  async function handleAIResponse(command, data) {
-    try {
-      // If backend provided a parsed autoExecute command, run it immediately
-      if (
-        data.autoExecute &&
-        data.autoExecute.action === "execute" &&
-        data.autoExecute.command
-      ) {
-        const a = data.autoExecute;
-        let attempts = 0;
-        let maxAttempts = 3;
-        let currentCommand = a.command;
-        let currentExplanation = a.explanation;
-        let lastOutput = "";
-
-        // Multi-iteration loop until success or max attempts
-        while (attempts < maxAttempts) {
-          attempts++;
-
-          addTerminalLine(`💡 ${currentExplanation}`, "info");
+        // FAILURE - Need to retry with smart adjustments
+        if (attempts < maxAttempts) {
           addTerminalLine(
-            `⚡ ${attempts > 1 ? "Attempt " + attempts + ": " : "Auto-executing: "}${currentCommand}`,
-            "info",
+            `🧠 Atom: Method ${attempts} didn't find vulnerabilities. Analyzing...`,
+            "warning",
           );
-          await new Promise((resolve) => setTimeout(resolve, 300));
 
-          const result = await processCommand(currentCommand);
-          lastOutput = result.message || "";
+          // SMART RETRY LOGIC - Pattern matching for common issues
+          let nextCommand = "";
+          let nextExplanation = "";
 
-          // Check for success indicators
-          const hasVulnerabilities =
-            lastOutput.includes("VULNERABLE") ||
-            lastOutput.includes("vulnerable") ||
-            lastOutput.includes("exploit") ||
-            lastOutput.includes("CVE-") ||
-            (lastOutput.includes("open") && lastOutput.length > 300);
-
-          // Check for failures
-          const hostDown =
-            lastOutput.includes("Host seems down") ||
-            lastOutput.includes("Note: Host seems down");
-          const noHostsUp = lastOutput.includes("0 hosts up");
-          const timeout =
-            lastOutput.includes("timeout") || lastOutput.includes("timed out");
-          const refused =
-            lastOutput.includes("refused") || lastOutput.includes("filtered");
-          const noResults = lastOutput.length < 200 && !hasVulnerabilities;
-
-          // SUCCESS - Found vulnerabilities or good results
-          if (
-            hasVulnerabilities ||
-            (lastOutput.length > 300 && !hostDown && !noHostsUp)
-          ) {
-            addTerminalLine("✅ Found results!", "success");
-            saveChatInteraction(
-              command,
-              `Success after ${attempts} attempt(s)`,
-              currentCommand,
-              lastOutput,
-            );
-            return result;
-          }
-
-          // FAILURE - Need to retry with smart adjustments
-          if (attempts < maxAttempts) {
-            addTerminalLine(
-              `🧠 Atom: Method ${attempts} didn't find vulnerabilities. Analyzing...`,
-              "warning",
-            );
-
-            // SMART RETRY LOGIC - Pattern matching for common issues
-            let nextCommand = "";
-            let nextExplanation = "";
-
-            if (hostDown || noHostsUp) {
-              // Host blocking pings - add -Pn
-              if (!currentCommand.includes("-Pn")) {
-                nextCommand = currentCommand.replace("nmap", "nmap -Pn");
-                nextExplanation = "Bypassing ping check with -Pn flag";
-              } else {
-                // Already tried -Pn, switch to different tool
-                if (currentCommand.includes("nmap")) {
-                  nextCommand = `nikto -h ${extractTarget(currentCommand)}`;
-                  nextExplanation =
-                    "Switching to Nikto web vulnerability scanner";
-                } else {
-                  nextCommand = `nmap -Pn -sV -sC ${extractTarget(currentCommand)}`;
-                  nextExplanation =
-                    "Deep scan with service detection and default scripts";
-                }
-              }
-            } else if (noResults || timeout) {
-              // Switch tools strategically
-              const target = extractTarget(currentCommand);
-              if (currentCommand.includes("nikto")) {
-                nextCommand = `nmap -Pn -sV --script=vuln,exploit ${target}`;
-                nextExplanation = "Switching to Nmap vulnerability scripts";
-              } else if (
-                currentCommand.includes("nmap") &&
-                !currentCommand.includes("--script")
-              ) {
-                nextCommand = `nmap -Pn --script=http-vuln-*,ssl-* ${target}`;
-                nextExplanation = "Trying HTTP and SSL vulnerability scripts";
-              } else {
-                nextCommand = `whatweb -v ${target}`;
-                nextExplanation =
-                  "Scanning web technologies for known vulnerabilities";
-              }
+          if (hostDown || noHostsUp) {
+            // Host blocking pings - add -Pn
+            if (!currentCommand.includes("-Pn")) {
+              nextCommand = currentCommand.replace("nmap", "nmap -Pn");
+              nextExplanation = "Bypassing ping check with -Pn flag";
             } else {
-              // Ask AI for suggestion
-              const aiPrompt = `Goal: "${command}". Tried: "${currentCommand}". Output: "${lastOutput.substring(0, 200)}". Suggest DIFFERENT tool/approach. Return JSON: {"action":"execute","command":"[cmd]","explanation":"[why]"}`;
-
-              try {
-                const aiResponse = await fetch(
-                  `${CONFIG.BACKEND_API_URL}/openrouter`,
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message: aiPrompt }),
-                  },
-                );
-
-                if (aiResponse.ok) {
-                  const aiData = await aiResponse.json();
-                  if (aiData.autoExecute) {
-                    nextCommand = aiData.autoExecute.command;
-                    nextExplanation = aiData.autoExecute.explanation;
-                  }
-                }
-              } catch (e) {
-                // Fallback if AI fails
-                nextCommand = `nmap -Pn -p- ${extractTarget(currentCommand)}`;
-                nextExplanation = "Full port scan to find all open services";
+              // Already tried -Pn, switch to different tool
+              if (currentCommand.includes("nmap")) {
+                nextCommand = `nikto -h ${extractTarget(currentCommand)}`;
+                nextExplanation =
+                  "Switching to Nikto web vulnerability scanner";
+              } else {
+                nextCommand = `nmap -Pn -sV -sC ${extractTarget(currentCommand)}`;
+                nextExplanation =
+                  "Deep scan with service detection and default scripts";
               }
             }
-
-            if (nextCommand && nextCommand !== currentCommand) {
-              currentCommand = nextCommand;
-              currentExplanation = nextExplanation;
+          } else if (noResults || timeout) {
+            // Switch tools strategically
+            const target = extractTarget(currentCommand);
+            if (currentCommand.includes("nikto")) {
+              nextCommand = `nmap -Pn -sV --script=vuln,exploit ${target}`;
+              nextExplanation = "Switching to Nmap vulnerability scripts";
+            } else if (
+              currentCommand.includes("nmap") &&
+              !currentCommand.includes("--script")
+            ) {
+              nextCommand = `nmap -Pn --script=http-vuln-*,ssl-* ${target}`;
+              nextExplanation = "Trying HTTP and SSL vulnerability scripts";
             } else {
-              // Can't find new approach, stop
-              break;
+              nextCommand = `whatweb -v ${target}`;
+              nextExplanation =
+                "Scanning web technologies for known vulnerabilities";
             }
           } else {
-            // Max attempts reached
-            addTerminalLine(
-              "⚠️ Atom: Tried multiple methods, showing last results",
-              "warning",
-            );
-            saveChatInteraction(
-              command,
-              `${attempts} attempts made`,
-              currentCommand,
-              lastOutput,
-            );
-            return result;
+            // Ask AI for suggestion
+            const aiPrompt = `Goal: "${command}". Tried: "${currentCommand}". Output: "${lastOutput.substring(0, 200)}". Suggest DIFFERENT tool/approach. Return JSON: {"action":"execute","command":"[cmd]","explanation":"[why]"}`;
+
+            try {
+              const aiResponse = await fetch(
+                `${CONFIG.BACKEND_API_URL}/openrouter`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ message: aiPrompt }),
+                },
+              );
+
+              if (aiResponse.ok) {
+                const aiData = await aiResponse.json();
+                if (aiData.autoExecute) {
+                  nextCommand = aiData.autoExecute.command;
+                  nextExplanation = aiData.autoExecute.explanation;
+                }
+              }
+            } catch (e) {
+              // Fallback if AI fails
+              nextCommand = `nmap -Pn -p- ${extractTarget(currentCommand)}`;
+              nextExplanation = "Full port scan to find all open services";
+            }
           }
-        }
 
-        // Fallback - return last result
-        saveChatInteraction(command, a.explanation, currentCommand, lastOutput);
-        return { message: lastOutput, type: "info" };
-      }
-
-      // Helper function to extract target IP/domain from command
-      function extractTarget(cmd) {
-        const parts = cmd.split(" ");
-        for (let i = parts.length - 1; i >= 0; i--) {
-          const part = parts[i];
-          if (
-            part.match(/^\d+\.\d+\.\d+\.\d+$/) ||
-            part.match(/^[a-z0-9.-]+\.[a-z]{2,}$/i)
-          ) {
-            return part;
+          if (nextCommand && nextCommand !== currentCommand) {
+            currentCommand = nextCommand;
+            currentExplanation = nextExplanation;
+          } else {
+            // Can't find new approach, stop
+            break;
           }
-        }
-        return parts[parts.length - 1];
-      }
-
-      // Handle the OpenAI API response format
-      const aiResponse = (data.response || data.reply || "").trim();
-
-      if (!aiResponse) {
-        console.error("Unexpected API response:", data);
-        throw new Error("Invalid response format from AI");
-      }
-
-      // Check if AI wants to execute a command (JSON response)
-      if (aiResponse.startsWith("{") && aiResponse.includes('"action"')) {
-        try {
-          const parsed = JSON.parse(aiResponse);
-
-          if (parsed.action === "execute" && parsed.command) {
-            // AI has decided to execute a command
-            addTerminalLine(
-              `💡 ${parsed.explanation || "Executing command"}`,
-              "info",
-            );
-            addTerminalLine(`⚡ Auto-executing: ${parsed.command}`, "info");
-
-            // Execute the command automatically
-            await new Promise((resolve) => setTimeout(resolve, 500));
-            const result = await processCommand(parsed.command);
-
-            // Save to chat history with scan result
-            saveChatInteraction(
-              command,
-              parsed.explanation,
-              parsed.command,
-              result.message,
-            );
-
-            return result;
-          }
-        } catch (parseError) {
-          console.log("Not a JSON command response, treating as regular text");
+        } else {
+          // Max attempts reached
+          addTerminalLine(
+            "⚠️ Atom: Tried multiple methods, showing last results",
+            "warning",
+          );
+          saveChatInteraction(
+            command,
+            `${attempts} attempts made`,
+            currentCommand,
+            lastOutput,
+          );
+          return result;
         }
       }
 
-      // Regular AI response (not a command)
-      // Save to chat history
-      saveChatInteraction(command, aiResponse);
+      // Fallback - return last result
+      saveChatInteraction(command, a.explanation, currentCommand, lastOutput);
+      return { message: lastOutput, type: "info" };
+    }
 
+    // Helper function to extract target IP/domain from command
+    function extractTarget(cmd) {
+      const parts = cmd.split(" ");
+      for (let i = parts.length - 1; i >= 0; i--) {
+        const part = parts[i];
+        if (
+          part.match(/^\d+\.\d+\.\d+\.\d+$/) ||
+          part.match(/^[a-z0-9.-]+\.[a-z]{2,}$/i)
+        ) {
+          return part;
+        }
+      }
+      return parts[parts.length - 1];
+    }
+
+    // Handle the OpenAI API response format
+    const aiResponse = (data.response || data.reply || "").trim();
+
+    if (!aiResponse) {
+      console.error("Unexpected API response:", data);
+      throw new Error("Invalid response format from AI");
+    }
+
+    // Check if AI wants to execute a command (JSON response)
+    if (aiResponse.startsWith("{") && aiResponse.includes('"action"')) {
+      try {
+        const parsed = JSON.parse(aiResponse);
+
+        if (parsed.action === "execute" && parsed.command) {
+          // AI has decided to execute a command
+          addTerminalLine(
+            `💡 ${parsed.explanation || "Executing command"}`,
+            "info",
+          );
+          addTerminalLine(`⚡ Auto-executing: ${parsed.command}`, "info");
+
+          // Execute the command automatically
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          const result = await processCommand(parsed.command);
+
+          // Save to chat history with scan result
+          saveChatInteraction(
+            command,
+            parsed.explanation,
+            parsed.command,
+            result.message,
+          );
+
+          return result;
+        }
+      } catch (parseError) {
+        console.log("Not a JSON command response, treating as regular text");
+      }
+    }
+
+    // Regular AI response (not a command)
+    // Save to chat history
+    saveChatInteraction(command, aiResponse);
+
+    return {
+      message: `🤖 Atom: ${aiResponse}`,
+      type: "success",
+    };
+  } catch (error) {
+    console.error("AI Error:", error);
+
+    // Check if backend is reachable
+    if (error.message.includes("fetch")) {
       return {
-        message: `🤖 Atom: ${aiResponse}`,
-        type: "success",
-      };
-    } catch (error) {
-      console.error("AI Error:", error);
-
-      // Check if backend is reachable
-      if (error.message.includes("fetch")) {
-        return {
-          message: `⚠️ Cannot connect to backend server.\n\n1. Make sure backend is running: npm start\n2. Backend should be at: ${CONFIG.BACKEND_API_URL}\n3. Check CORS settings\n\nMeanwhile, try direct commands: nmap, scan, metasploit, wireshark, or 'help'`,
-          type: "error",
-        };
-      }
-
-      return {
-        message: `⚠️ Atom error: ${error.message}\n\nDirect commands available: nmap, sqlmap, help`,
+        message: `⚠️ Cannot connect to backend server.\n\n1. Make sure backend is running: npm start\n2. Backend should be at: ${CONFIG.BACKEND_API_URL}\n3. Check CORS settings\n\nMeanwhile, try direct commands: nmap, scan, metasploit, wireshark, or 'help'`,
         type: "error",
       };
     }
+
+    return {
+      message: `⚠️ Atom error: ${error.message}\n\nDirect commands available: nmap, sqlmap, help`,
+      type: "error",
+    };
+  }
+}
+
+// Execute button handler - ensure proper binding
+function setupExecuteHandlers() {
+  const btn = document.getElementById("executeBtn");
+  const input = document.getElementById("commandInput");
+
+  if (!btn || !input) {
+    console.error("Execute button or command input not found");
+    setTimeout(setupExecuteHandlers, 500); // Retry after 500ms
+    return;
   }
 
-  // Execute button handler - ensure proper binding
-  function setupExecuteHandlers() {
-    const btn = document.getElementById("executeBtn");
-    const input = document.getElementById("commandInput");
+  console.log("✓ Setting up execute handlers...");
 
-    if (!btn || !input) {
-      console.error("Execute button or command input not found");
-      setTimeout(setupExecuteHandlers, 500); // Retry after 500ms
-      return;
-    }
+  // Remove ALL existing listeners by cloning elements
+  const newBtn = btn.cloneNode(true);
+  const newInput = input.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn, btn);
+  input.parentNode.replaceChild(newInput, input);
 
-    console.log("✓ Setting up execute handlers...");
+  // Get fresh references
+  const executeButton = document.getElementById("executeBtn");
+  const commandField = document.getElementById("commandInput");
 
-    // Remove ALL existing listeners by cloning elements
-    const newBtn = btn.cloneNode(true);
-    const newInput = input.cloneNode(true);
-    btn.parentNode.replaceChild(newBtn, btn);
-    input.parentNode.replaceChild(newInput, input);
+  // Add click handler with proper event binding
+  executeButton.addEventListener(
+    "click",
+    function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log("🖱️ Execute button clicked!");
+      const command = commandField.value.trim();
+      if (command && !isExecuting) {
+        console.log("➡️ Executing:", command);
+        executeCommand(command);
+      } else if (!command) {
+        console.log("⚠️ No command entered");
+      } else if (isExecuting) {
+        console.log("⚠️ Already executing a command");
+      }
+    },
+    false,
+  );
 
-    // Get fresh references
-    const executeButton = document.getElementById("executeBtn");
-    const commandField = document.getElementById("commandInput");
-
-    // Add click handler with proper event binding
-    executeButton.addEventListener(
-      "click",
-      function (e) {
+  // Enter key to execute - both keydown AND keypress for maximum compatibility
+  commandField.addEventListener(
+    "keydown",
+    function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         e.stopPropagation();
-        console.log("🖱️ Execute button clicked!");
+        console.log("⏎ Enter key pressed!");
         const command = commandField.value.trim();
         if (command && !isExecuting) {
           console.log("➡️ Executing:", command);
           executeCommand(command);
-        } else if (!command) {
-          console.log("⚠️ No command entered");
-        } else if (isExecuting) {
-          console.log("⚠️ Already executing a command");
         }
-      },
-      false,
-    );
-
-    // Enter key to execute - both keydown AND keypress for maximum compatibility
-    commandField.addEventListener(
-      "keydown",
-      function (e) {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log("⏎ Enter key pressed!");
-          const command = commandField.value.trim();
-          if (command && !isExecuting) {
-            console.log("➡️ Executing:", command);
-            executeCommand(command);
-          }
-        } else if (e.key === "ArrowUp") {
-          e.preventDefault();
-          if (historyIndex < commandHistory.length - 1) {
-            historyIndex++;
-            commandField.value = commandHistory[historyIndex];
-          }
-        } else if (e.key === "ArrowDown") {
-          e.preventDefault();
-          if (historyIndex > 0) {
-            historyIndex--;
-            commandField.value = commandHistory[historyIndex];
-          } else if (historyIndex === 0) {
-            historyIndex = -1;
-            commandField.value = "";
-          }
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (historyIndex < commandHistory.length - 1) {
+          historyIndex++;
+          commandField.value = commandHistory[historyIndex];
         }
-      },
-      false,
-    );
-
-    // Backup: Also listen for keypress as fallback
-    commandField.addEventListener(
-      "keypress",
-      function (e) {
-        if (e.key === "Enter" && !e.shiftKey && !isExecuting) {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log("⏎ Enter keypress detected!");
-          const command = commandField.value.trim();
-          if (command) {
-            console.log("➡️ Executing:", command);
-            executeCommand(command);
-          }
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (historyIndex > 0) {
+          historyIndex--;
+          commandField.value = commandHistory[historyIndex];
+        } else if (historyIndex === 0) {
+          historyIndex = -1;
+          commandField.value = "";
         }
-      },
-      false,
-    );
+      }
+    },
+    false,
+  );
 
-    console.log("✅ Execute handlers initialized successfully");
-  }
+  // Backup: Also listen for keypress as fallback
+  commandField.addEventListener(
+    "keypress",
+    function (e) {
+      if (e.key === "Enter" && !e.shiftKey && !isExecuting) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log("⏎ Enter keypress detected!");
+        const command = commandField.value.trim();
+        if (command) {
+          console.log("➡️ Executing:", command);
+          executeCommand(command);
+        }
+      }
+    },
+    false,
+  );
 
-  // Call setup IMMEDIATELY when script loads
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", setupExecuteHandlers);
-  } else {
-    // DOM already loaded
-    setupExecuteHandlers();
-  }
+  console.log("✅ Execute handlers initialized successfully");
+}
 
-  // Also call again after a delay to ensure DOM is fully ready
-  setTimeout(setupExecuteHandlers, 1000);
+// Call setup IMMEDIATELY when script loads
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", setupExecuteHandlers);
+} else {
+  // DOM already loaded
+  setupExecuteHandlers();
+}
+
+// Also call again after a delay to ensure DOM is fully ready
+setTimeout(setupExecuteHandlers, 1000);
