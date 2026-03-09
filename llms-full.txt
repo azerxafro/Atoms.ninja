@@ -1,0 +1,61 @@
+# Atoms Ninja — Full Technical Context for AI
+
+> AI-Powered Cybersecurity Platform by MONADELTA
+
+## Overview
+
+Atoms Ninja is an interactive, AI-powered cybersecurity platform that combines 500+ Kali Linux penetration testing tools with an AI Security Architect. It provides a ChatGPT-style interface for cybersecurity consulting, real-time command execution, and automated security workflows.
+
+## Platform Architecture
+
+### Frontend (Vercel)
+- Single-page application with neumorphic dark theme
+- Six arsenal tabs: Ninja Engine, AI Architect, Digital Forensics, Reports, Vuln Scanner, Exploit DB
+- Discord OAuth2 login gate with ASCII splash screen
+- Real-time terminal output with markdown rendering
+- GSAP-powered animations for premium UX
+
+### Backend (Vercel Serverless + AWS EC2)
+- **Vercel API Layer** (`/api/index.js`): Handles auth, AI routing, command proxying
+- **AWS EC2 Kali Instance**: Runs actual security tools (nmap, nikto, sqlmap, etc.)
+- **AI Engine**: OpenRouter multi-model routing (DeepSeek, Llama, Qwen, Mistral)
+- **Beta API** (`/api/beta.js`): Experimental features and alternative AI providers
+
+### AI Security Architect ("Atom")
+- Personality: Nerdy, enthusiastic cybersecurity AI companion
+- Capabilities: Security strategy, architecture review, tool guidance, educational explanations
+- Command detection: Parses natural language into executable Kali Linux commands
+- Multi-model fallback: Tries multiple AI providers for reliability
+
+## Security Tools Available (500+)
+
+### Categories
+- **Reconnaissance**: nmap, masscan, recon-ng, theHarvester, amass, subfinder
+- **Web Application**: nikto, sqlmap, wpscan, dirb, gobuster, burpsuite
+- **Exploitation**: metasploit, searchsploit, hydra, john, hashcat
+- **Wireless**: aircrack-ng, wifite, fern-wifi-cracker
+- **Forensics**: volatility, autopsy, foremost, binwalk, steghide
+- **Network**: wireshark, tcpdump, ettercap, bettercap, responder
+- **Password**: john, hashcat, hydra, medusa, cewl, crunch
+- **Reverse Engineering**: radare2, ghidra, objdump, strace, ltrace
+- **Vulnerability Scanning**: openvas, nessus, nuclei, nikto
+- **OSINT**: maltego, spiderfoot, sherlock, social-engineer-toolkit
+
+## API Endpoints
+
+- `GET /api/health` — Health check and system status
+- `POST /api/multi-ai` — AI consultation (natural language → security guidance or commands)
+- `POST /api/kali/:tool` — Execute specific Kali Linux tool
+- `POST /api/execute-shell` — Execute full shell command strings
+- `GET /api/auth/discord` — Discord OAuth2 initiation
+- `GET /api/auth/discord/callback` — OAuth2 callback handler
+- `GET /api/auth/me` — Get authenticated user info
+- `POST /api/auth/logout` — End session
+
+## Design Philosophy
+
+- **Zero-config for users**: AI handles server-side, no API keys needed
+- **Real security tools**: Not simulated — actual Kali Linux tools on AWS EC2
+- **AI-augmented workflows**: Natural language commands translated to tool invocations
+- **Premium UX**: Neumorphic design system, ASCII art branding, smooth animations
+- **Security-first**: Discord auth, rate limiting, WAF protection, input sanitization

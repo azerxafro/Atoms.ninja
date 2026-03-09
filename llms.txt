@@ -1,0 +1,43 @@
+# Atoms Ninja
+
+> AI-Powered Cybersecurity Platform by MONADELTA
+
+Atoms Ninja is an interactive, AI-powered cybersecurity platform that combines 500+ Kali Linux penetration testing tools with an AI Security Architect for expert guidance on security strategy, architecture design, vulnerability assessment, and digital forensics.
+
+## Core Capabilities
+
+- **Ninja Engine**: Interactive terminal with direct access to 500+ Kali Linux tools (nmap, metasploit, burp suite, wireshark, nikto, sqlmap, etc.) running on AWS EC2
+- **AI Security Architect**: AI-powered consultant for security strategy, architecture review, risk assessment, penetration testing guidance, and remediation planning
+- **Digital Forensics**: Upload and analyze PCAP captures, memory dumps, and system logs using Volatility, Autopsy, and Foremost
+- **Automated Vulnerability Scanner**: GUI-based scanning with configurable profiles (fast port scan, deep vulnerability scan, web app scan)
+- **Exploit Database**: SearchSploit integration for querying CVEs and proof-of-concept exploits
+- **Automated Reports**: Generate comprehensive penetration test reports with findings, risk assessments, and remediation steps
+
+## Technology Stack
+
+- **Frontend**: Vanilla HTML/CSS/JS with premium neumorphic design, GSAP animations
+- **Backend**: Node.js + Express on Vercel (serverless) + AWS EC2 (Kali tools)
+- **AI Engine**: OpenRouter API (DeepSeek, Llama, Qwen, Mistral models)
+- **Authentication**: Discord OAuth2
+- **Security Tools**: 500+ Kali Linux tools running on a dedicated AWS EC2 instance
+
+## Target Audience
+
+Cybersecurity professionals, penetration testers, security architects, SOC analysts, digital forensics investigators, bug bounty hunters, and infosec students.
+
+## Key Use Cases
+
+1. **Penetration Testing**: Run real security tools against targets with AI-guided methodology
+2. **Security Architecture Review**: Get AI-powered advice on designing secure systems
+3. **Incident Response**: Analyze forensic evidence with professional tools
+4. **Vulnerability Assessment**: Automated scanning with actionable remediation guidance
+5. **Security Training**: Learn ethical hacking with an AI tutor that explains every step
+
+## Links
+
+- Website: https://atoms.ninja/
+- Documentation: https://atoms.ninja/docs/
+
+## Optional Detail
+
+- [llms-full.txt](https://atoms.ninja/llms-full.txt): Extended technical documentation for AI context

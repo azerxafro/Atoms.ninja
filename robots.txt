@@ -1,0 +1,58 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /public/js/
+Disallow: /.vercel/
+
+# ═══ AI Crawlers — Explicitly Allowed ═══
+# OpenAI
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+# Google AI / Gemini
+User-agent: Google-Extended
+Allow: /
+
+# Anthropic / Claude
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+# Meta AI
+User-agent: FacebookBot
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+# Microsoft / Bing AI / Copilot
+User-agent: Bingbot
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+# Cohere
+User-agent: cohere-ai
+Allow: /
+
+# Apple Intelligence
+User-agent: Applebot-Extended
+Allow: /
+
+# Common Crawl (used by many AI training datasets)
+User-agent: CCBot
+Allow: /
+
+# Sitemap
+Sitemap: https://atoms.ninja/sitemap.xml
+
+# AI context file
+# See https://llmstxt.org/
+# llms.txt: https://atoms.ninja/llms.txt

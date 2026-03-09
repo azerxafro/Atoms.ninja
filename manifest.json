@@ -1,0 +1,29 @@
+{
+    "name": "Atoms Ninja — AI Security Platform",
+    "short_name": "Atoms Ninja",
+    "description": "AI-powered cybersecurity platform with 500+ Kali Linux tools, penetration testing, digital forensics, and vulnerability scanning.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0a0e14",
+    "theme_color": "#121416",
+    "orientation": "portrait-primary",
+    "categories": [
+        "security",
+        "utilities",
+        "developer"
+    ],
+    "icons": [
+        {
+            "src": "/favicon.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/logo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
