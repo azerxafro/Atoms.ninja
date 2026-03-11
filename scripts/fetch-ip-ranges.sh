@@ -170,7 +170,6 @@ data = {
   },
   'static_infrastructure': {
     'ec2_elastic_ip': '34.202.47.138/32',
-    'gcp_kali_vm_ip': '136.113.58.241/32',
     'note': 'These are static IPs — update only if instances are replaced'
   },
   'admin': {

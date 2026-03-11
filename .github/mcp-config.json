@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/admin/Documents/GitHub/atoms.ninja"]
+    },
+    "firebase": {
+      "command": "npx",
+      "args": ["-y", "firebase-mcp-server"]
+    },
+    "genkit": {
+      "command": "npx",
+      "args": ["-y", "genkit-mcp-server"]
+    },
+    "perplexity": {
+      "command": "npx",
+      "args": ["-y", "@smithery/perplexity-ask"]
+    },
+    "netlify": {
+      "command": "npx",
+      "args": ["-y", "netlify-mcp-server"]
+    },
+    "notion": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-notion"]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
+    }
+  }
+}

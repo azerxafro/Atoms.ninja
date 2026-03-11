@@ -60,9 +60,14 @@ if [ "$ADMIN_IP" = "YOUR_ADMIN_IP/32" ] || [ -z "$ADMIN_IP" ]; then
 fi
 
 # Load Vercel ranges as bash array
-mapfile -t VERCEL_RANGES < <(jq -r '.vercel.ipv4_ranges[]' "$CONFIG_FILE" 2>/dev/null || true)
+VERCEL_RANGES=()
+while IFS= read -r line; do VERCEL_RANGES+=("$line"); done < <(jq -r '.vercel.ipv4_ranges[]' "$CONFIG_FILE" 2>/dev/null || true)
 # Load government ranges (skip comment/placeholder lines)
-mapfile -t GOVT_RANGES < <(jq -r '.government.ipv4_ranges[]' "$CONFIG_FILE" 2>/dev/null | grep -v '^#' | grep -v PLACEHOLDER || true)
+GOVT_RANGES=()
+while IFS= read -r line; do GOVT_RANGES+=("$line"); done < <(jq -r '.government.ipv4_ranges[]' "$CONFIG_FILE" 2>/dev/null | grep -v '^#' | grep -v PLACEHOLDER || true)
+# Load global whitelist ranges
+GLOBAL_RANGES=()
+while IFS= read -r line; do GLOBAL_RANGES+=("$line"); done < <(jq -r '.global_whitelist.ipv4_ranges[]' "$CONFIG_FILE" 2>/dev/null || true)
 
 echo "📋 Configuration:"
 echo "   Security Group:  $SG_ID ($REGION)"
@@ -162,8 +167,19 @@ if [ "$ENFORCE_WHITELIST" = "true" ]; then
          --tag-specifications 'ResourceType=security-group-rule,Tags=[{Key=Name,Value=atoms-ninja-govt},{Key=Source,Value=government},{Key=ManagedBy,Value=atoms-ninja-ip-config}]'"
     done
     echo ""
-  else
     echo "ℹ️  Step 4: No government IPs configured (add to ip-attribution.json when available)"
+    echo ""
+  fi
+
+  # ── Step 4.5: Allow port 3001 from global whitelist ──────────────────
+  if [ ${#GLOBAL_RANGES[@]} -gt 0 ]; then
+    echo "🌍 Step 4.5: Port 3001 — Global whitelist ranges (${#GLOBAL_RANGES[@]} CIDRs)..."
+    for cidr in "${GLOBAL_RANGES[@]}"; do
+      apply_rule "Port 3001 from Global $cidr" \
+        "aws ec2 authorize-security-group-ingress --region '$REGION' --group-id '$SG_ID' \
+         --protocol tcp --port 3001 --cidr '$cidr' \
+         --tag-specifications 'ResourceType=security-group-rule,Tags=[{Key=Name,Value=atoms-ninja-global},{Key=Source,Value=global},{Key=ManagedBy,Value=atoms-ninja-ip-config}]'"
+    done
     echo ""
   fi
 else
