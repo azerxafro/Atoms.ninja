@@ -160,6 +160,9 @@
     
     <!-- Main App Shell (ChatGPT Style) -->
     <div class="app-shell hidden-on-load" id="mainApp">
+      <!-- Mobile Sidebar Overlay -->
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
       <!-- Premium Neumorphic Sidebar -->
       <aside class="sidebar">
         <div class="logo">
@@ -223,7 +226,7 @@
           <button class="menu-btn" id="discordLoginBtn" onclick="window.location.href = '/api/auth/discord'">Sign in with Discord</button>
           <div class="user-profile hidden-on-load" id="userProfile">
             <div class="user-info" id="userInfo">
-              <img class="user-avatar" id="userAvatar" src="" alt="Avatar" />
+              <img class="user-avatar" id="userAvatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5NGEzYjgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj4gICAgPHBhdGggZD0iTTIwIDIxdi0yYTQgNCAwIDAgMC00LTRINThhNCA0IDAgMCAwLTQgNHYyIj48L3BhdGg+ICAgIDxjaXJjbGUgY3g9IjEyIiBjeT0iNyIgcj0iNCI+PC9jaXJjbGU+PC9zdmc+" alt="Avatar" />
               <span class="user-name" id="userName"></span>
             </div>
             <button class="menu-btn mt-2" id="signOutBtn" title="Sign Out">Sign Out</button>

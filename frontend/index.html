@@ -116,17 +116,29 @@
 
         <nav class="sidebar-nav">
           <div class="nav-section">
-            <h3 class="nav-header">History</h3>
-            <div id="chatHistory" class="history-list">
-              <!-- Dynamically populated -->
-              <div class="history-item active">Welcome Session</div>
+            <h3 class="nav-header">Navigation</h3>
+            <div class="sidebar-menu">
+              <div class="sidebar-item active" data-section="section-console">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="sidebar-icon"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                Console
+              </div>
+              <div class="sidebar-item" data-section="section-capabilities">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="sidebar-icon"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
+                Capabilities
+              </div>
+              <div class="sidebar-item" data-section="section-about">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="sidebar-icon"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
+                About
+              </div>
             </div>
           </div>
 
           <div class="nav-section">
-            <h3 class="nav-header">Tools</h3>
-            <a href="#features" class="nav-link">Capabilities</a>
-            <a href="#docs" class="nav-link">Documentation</a>
+            <h3 class="nav-header">History</h3>
+            <div id="chatHistory" class="history-list">
+              <!-- Dynamically populated -->
+              <div class="history-item">Welcome Session</div>
+            </div>
           </div>
         </nav>
 
@@ -152,8 +164,9 @@
             </div>
           </header>
 
-          <!-- Hero Section -->
-          <section class="hero">
+          <!-- Section: Console (Hero + Demo) -->
+          <div id="section-console" class="section-panel active">
+            <section class="hero">
             <div class="hero-content">
               <div class="badge">🛡️ AI Security Architect + Kali Linux</div>
               <h1 class="hero-title">
@@ -273,10 +286,12 @@
                 </div>
               </div>
             </div>
-          </section>
+            </div>
+          </div>
 
-          <!-- Features Section -->
-          <section class="features" id="features">
+          <!-- Section: Capabilities -->
+          <div id="section-capabilities" class="section-panel">
+            <section class="features" id="features">
             <div class="section-header">
               <div class="badge">Features</div>
               <h2 class="section-title">Complete Security Arsenal</h2>
@@ -403,10 +418,12 @@
                 </p>
               </div>
             </div>
-          </section>
+            </section>
+          </div>
 
-          <!-- Footer -->
-          <footer class="footer">
+          <!-- Section: About (Footer) -->
+          <div id="section-about" class="section-panel">
+            <footer class="footer">
             <div class="footer-content">
               <div class="footer-brand">
                 <div class="logo">

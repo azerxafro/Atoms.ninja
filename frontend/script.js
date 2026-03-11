@@ -1,8 +1,78 @@
-// Smooth scroll for navigation links
+// Section Navigation Logic
+document.addEventListener("DOMContentLoaded", () => {
+  const sidebarItems = document.querySelectorAll(".sidebar-item[data-section]");
+  const sectionPanels = document.querySelectorAll(".section-panel");
+  const sidebar = document.querySelector(".sidebar");
+  const menuToggle = document.getElementById("menuToggle");
+
+  const sessionTitle = document.querySelector(".current-session-title");
+
+  sidebarItems.forEach((item) => {
+    item.addEventListener("click", () => {
+      const targetSectionId = item.getAttribute("data-section");
+      const targetSection = document.getElementById(targetSectionId);
+
+      if (targetSection) {
+        // Update active sidebar item
+        sidebarItems.forEach((i) => i.classList.remove("active"));
+        item.classList.add("active");
+
+        // Update Header Title based on section or item text
+        if (sessionTitle) {
+          const itemText = item.querySelector("span")
+            ? item.querySelector("span").innerText
+            : item.innerText;
+          sessionTitle.innerText =
+            itemText === "Console" ? "Security Console" : itemText;
+        }
+
+        // Update active section panel with fade effect
+        sectionPanels.forEach((panel) => {
+          panel.classList.remove("active");
+          panel.style.display = "none";
+          panel.style.opacity = "0";
+          panel.style.visibility = "hidden"; // Ensure hidden panels don't interfere
+        });
+
+        targetSection.style.display = "block";
+        targetSection.style.visibility = "visible";
+        // Trigger reflow for transition
+        targetSection.offsetHeight;
+        targetSection.classList.add("active");
+        targetSection.style.opacity = "1";
+
+        // Scroll to top of new section
+        targetSection.scrollTop = 0;
+
+        // Auto-close mobile sidebar
+        if (window.innerWidth < 768 && sidebar && menuToggle) {
+          gsap.to(sidebar, { x: -280, duration: 0.5, ease: "power4.in" });
+          menuToggle.classList.remove("active");
+          const overlay = document.querySelector(".sidebar-overlay");
+          if (overlay) overlay.classList.remove("active");
+        }
+      }
+    });
+  });
+});
+
+// Smooth scroll for navigation links (legacy/internal links)
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   anchor.addEventListener("click", function (e) {
     e.preventDefault();
-    const target = document.querySelector(this.getAttribute("href"));
+    const href = this.getAttribute("href");
+    if (href === "#") return;
+
+    // Check if target is a section we should switch to
+    const sectionTarget = document.querySelector(
+      `.sidebar-item[data-section="section-${href.replace("#", "")}"]`,
+    );
+    if (sectionTarget) {
+      sectionTarget.click();
+      return;
+    }
+
+    const target = document.querySelector(href);
     if (target) {
       target.scrollIntoView({
         behavior: "smooth",
@@ -32,18 +102,31 @@ window.addEventListener("DOMContentLoaded", () => {
   const sidebar = document.querySelector(".sidebar");
   let sidebarOpen = false;
 
-  if (menuToggle) {
-    menuToggle.addEventListener("click", () => {
-      sidebarOpen = !sidebarOpen;
-      if (sidebarOpen) {
-        gsap.to(sidebar, { x: 0, duration: 0.5, ease: "power4.out" });
-        menuToggle.classList.add("active");
-      } else {
-        gsap.to(sidebar, { x: -280, duration: 0.5, ease: "power4.in" });
-        menuToggle.classList.remove("active");
-      }
-    });
+  // Create overlay
+  const overlay = document.createElement("div");
+  overlay.className = "sidebar-overlay";
+  document.body.appendChild(overlay);
+
+  function toggleSidebar(forceClose = false) {
+    if (forceClose) sidebarOpen = false;
+    else sidebarOpen = !sidebarOpen;
+
+    if (sidebarOpen) {
+      gsap.to(sidebar, { x: 0, duration: 0.5, ease: "power4.out" });
+      menuToggle.classList.add("active");
+      overlay.classList.add("active");
+    } else {
+      gsap.to(sidebar, { x: -280, duration: 0.5, ease: "power4.in" });
+      menuToggle.classList.remove("active");
+      overlay.classList.remove("active");
+    }
   }
+
+  if (menuToggle) {
+    menuToggle.addEventListener("click", () => toggleSidebar());
+  }
+
+  overlay.addEventListener("click", () => toggleSidebar(true));
 
   // New Chat Button
   const newChatBtn = document.getElementById("newChatBtn");
@@ -56,6 +139,9 @@ window.addEventListener("DOMContentLoaded", () => {
       if (window.innerWidth < 768) {
         gsap.to(sidebar, { x: -280, duration: 0.5 });
         sidebarOpen = false;
+        if (menuToggle) menuToggle.classList.remove("active");
+        const overlay = document.querySelector(".sidebar-overlay");
+        if (overlay) overlay.classList.remove("active");
       }
     });
   }

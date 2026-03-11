@@ -677,11 +677,25 @@ function initArsenal() {
   const originalTerminal = document.getElementById("originalDemoCard");
   const arsenalLayout = document.getElementById("arsenalLayout");
   const menuToggle = document.getElementById("menuToggle");
+  const sidebar = document.querySelector(".sidebar");
+  const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+  function toggleMobileMenu() {
+    sidebar.classList.toggle("active");
+    sidebarOverlay.classList.toggle("active");
+  }
+
+  function closeMobileMenu() {
+    sidebar.classList.remove("active");
+    sidebarOverlay.classList.remove("active");
+  }
 
   if (menuToggle) {
-    menuToggle.addEventListener("click", () => {
-      document.querySelector(".sidebar").classList.toggle("active");
-    });
+    menuToggle.addEventListener("click", toggleMobileMenu);
+  }
+
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener("click", closeMobileMenu);
   }
 
   // ─── Beta Mode Toggle ──────────────────────────
@@ -737,6 +751,11 @@ function initArsenal() {
         // Tab specific setups
         if (tabId === "tab-reports") {
           updateReportDashboard();
+        }
+
+        // Close sidebar on mobile
+        if (window.innerWidth <= 768) {
+          closeMobileMenu();
         }
       }
     });
