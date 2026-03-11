@@ -3,6 +3,11 @@
 # Atoms Ninja — AWS Dual Environment Setup (Production + Beta)
 # Deploys main branch to www.atoms.ninja
 # Deploys beta branch to beta.atoms.ninja
+#
+# ⚠️  BUDGET WARNING: This script creates 2× EC2 instances + ALB
+#     Estimated cost: ~$55-70/month — EXCEEDS $33/mo budget!
+#     Only use if budget has been explicitly increased.
+#     For single-instance deploy, use: scripts/create-aws-instance.sh
 # ═══════════════════════════════════════════════════════════
 
 set -e

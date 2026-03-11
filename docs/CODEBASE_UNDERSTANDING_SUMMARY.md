@@ -352,14 +352,17 @@ KALI_MCP_ENDPOINT=http://<EC2_IP>:3001
 - **Concurrent Users**: 100+ (with rate limiting)
 - **Requests**: 60/minute per IP
 
-### **Cost Estimation** (Monthly)
+### **Cost Estimation** (Monthly — Budget: $33/mo, $100/3 months)
 | Component | Cost |
 |-----------|------|
-| Vercel Hosting | $0-20 (free tier) |
-| AWS EC2 (t3.large) | $25-50 |
-| Gemini API (10K requests) | ~$2.50 |
-| OpenAI API (10K requests) | ~$1.00 |
-| **Total** | **$30-75/month** |
+| Vercel Hosting | $0 (free tier) |
+| AWS EC2 (t3.small) | ~$15-18 |
+| EBS 20GB gp2 | $0 (free tier) |
+| Elastic IP (attached) | $0 |
+| AI APIs (pay-per-use) | ~$3-5 |
+| **Total** | **~$18-23/month** |
+
+⚠️ ALB ($16-22/mo), WAF ($5-10/mo), and dual instances ($36/mo) are **not included** — they exceed the $33/mo budget on their own.
 
 ---
 
@@ -580,8 +583,8 @@ This understanding task has created three comprehensive documentation files:
 ### **Current Capacity**
 - 100 users/day
 - Vercel Free Tier
-- Single AWS EC2 instance (t3.large)
-- Cost: $30-50/month
+- Single AWS EC2 instance (t3.small)
+- Budget: $33/month ($100 over 3 months)
 
 ### **10x Scale (1,000 users/day)**
 - Vercel Pro

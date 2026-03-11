@@ -6,6 +6,11 @@
 #   - Rate-based rule (2000 req/5 min per IP)
 #   - Default block action for unapproved sources on /api/kali and /api/execute
 #
+# ⚠️  BUDGET WARNING: AWS WAF costs ~$5-10/month (web ACL + rules + requests).
+#     Current budget is $33/month ($100 over 3 months).
+#     Only enable WAF if you have headroom in the budget.
+#     Run: bash scripts/check-aws-costs.sh to check current spend.
+#
 # Usage:
 #   bash scripts/setup-aws-waf.sh              # dry-run (preview only)
 #   bash scripts/setup-aws-waf.sh --dry-run    # explicit dry-run

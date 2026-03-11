@@ -2,6 +2,11 @@
 # ═══════════════════════════════════════════════════════
 # Atoms Ninja — Empire Defense (ALB + WAF Setup)
 # Automates the creation of a secure Load Balancer and WAF
+#
+# ⚠️  BUDGET WARNING: ALB (~$16-22/mo) + WAF (~$5-10/mo) = ~$25-30/mo
+#     This alone nearly exhausts the $33/month budget!
+#     Only use if budget has been explicitly increased.
+#     Run: bash scripts/check-aws-costs.sh to check current spend.
 # ═══════════════════════════════════════════════════════
 
 set -e

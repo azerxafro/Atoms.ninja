@@ -100,3 +100,29 @@ curl http://<EC2_IP>:3001/health
 - **Logs**: View in Vercel Functions logs
 - **Analytics**: Built-in Vercel Analytics
 
+## 💰 Budget Policy
+
+**Total Budget**: $100 over 3 months ($33/month)
+
+| Resource | Instance | Monthly Cost |
+|----------|----------|-------------|
+| EC2 (Kali) | t3.small | ~$15-18 |
+| EBS Volume | 20GB gp2 | ~$0 (free tier) |
+| Elastic IP | 1 (attached) | $0 |
+| Vercel | Free tier | $0 |
+| AI APIs | Pay-per-use | ~$3-5 |
+| **Total** | | **~$18-23** |
+
+### Budget Alerts
+```bash
+# Set up budget alerts (run once)
+bash scripts/setup-aws-budget.sh your-email@example.com
+
+# Check current month spend
+bash scripts/check-aws-costs.sh
+```
+
+**Alert thresholds**: $25 (75%), $30 (90%), $33 (100%), + forecast alert
+
+⚠️ **Do NOT deploy** ALB, WAF, or dual instances without increasing the budget — they cost $25-55/mo alone.
+
