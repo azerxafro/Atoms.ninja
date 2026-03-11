@@ -702,11 +702,13 @@ function initArsenal() {
 
   // Show Arsenal only if authenticated
   if (isAuth) {
-    if (originalTerminal) originalTerminal.style.display = "none";
     if (arsenalLayout) arsenalLayout.style.display = "flex";
+    document.getElementById("loginGate").style.display = "none";
+    document.getElementById("mainApp").style.display = "flex";
   } else {
-    if (originalTerminal) originalTerminal.style.display = "block";
-    if (arsenalLayout) arsenalLayout.style.display = "none";
+    document.getElementById("mainApp").style.display = "none";
+    document.getElementById("loginGate").style.display = "flex";
+    return; // Stop initialization if not auth'd
   }
 
   // Handle sidebar clicks
