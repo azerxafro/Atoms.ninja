@@ -227,7 +227,7 @@ async function processAIDirect(body) {
         { role: "assistant", content: reply },
         {
           role: "user",
-          content: `CRITICAL: You must respond with ONLY a JSON object in this exact format, no other text:\n{"action":"execute","command":"<full shell command>","explanation":"<1 line>"}\nDo NOT explain, just output the JSON.`,
+          content: `Please format your answer as a single JSON object with no surrounding text:\n{"action":"execute","command":"<full shell command>","explanation":"<1 line>"}\nOnly the JSON, nothing else.`,
         },
       ];
       const retryResult = await callAI(retryMessages);
