@@ -293,16 +293,19 @@ function updateAuthUI(userData) {
   const profileDiv = document.getElementById("userProfile");
   const avatarImg = document.getElementById("userAvatar");
   const nameSpan = document.getElementById("userName");
+  const signOutBtn = document.getElementById("signOutBtn");
 
   if (userData) {
     if (loginBtn) { loginBtn.style.display = "none"; loginBtn.classList.add("hidden-on-load"); }
     if (profileDiv) { profileDiv.style.display = "flex"; profileDiv.classList.remove("hidden-on-load"); }
+    if (signOutBtn) { signOutBtn.style.display = "flex"; signOutBtn.classList.remove("hidden-on-load"); }
     if (avatarImg) avatarImg.src = userData.avatar;
     if (nameSpan)
       nameSpan.textContent = userData.globalName || userData.username;
   } else {
     if (loginBtn) { loginBtn.style.display = "flex"; loginBtn.classList.remove("hidden-on-load"); }
     if (profileDiv) { profileDiv.style.display = "none"; profileDiv.classList.add("hidden-on-load"); }
+    if (signOutBtn) { signOutBtn.style.display = "none"; signOutBtn.classList.add("hidden-on-load"); }
   }
 }
 
