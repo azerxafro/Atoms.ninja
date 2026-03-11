@@ -14,6 +14,7 @@ const {
   callAI,
   buildThinkingChain,
 } = require("../lib/ai-core");
+const { resolveDomain, isValidDomain, extractDomain } = require("../lib/ip-resolver");
 const DiscordSocial = require("../lib/discord-social");
 
 const EC2_ENDPOINT = process.env.ATOMS_EC2_ENDPOINT || "";
@@ -550,6 +551,25 @@ module.exports = async (req, res) => {
 
     // ─── Multi-AI ────────────────────────────
     if (path === "/api/multi-ai") {
+      // IP resolution validation for domain queries
+      const { message } = req.body || {};
+      if (message && (message.includes("find ip") || message.includes("get ip") || message.includes("resolve"))) {
+        const domainMatch = message.match(/(?:of|for)\s+([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+        if (domainMatch) {
+          const domain = extractDomain(domainMatch[1]);
+          if (isValidDomain(domain)) {
+            try {
+              const resolved = await resolveDomain(domain);
+              // Inject validated IP data into session context
+              if (!req.body.sessionData) req.body.sessionData = {};
+              req.body.sessionData.resolvedIPs = resolved;
+            } catch (err) {
+              console.warn(`IP resolution failed for ${domain}:`, err.message);
+            }
+          }
+        }
+      }
+
       // Try EC2 first if configured
       if (EC2_ENDPOINT) {
         try {

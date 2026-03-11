@@ -24,6 +24,7 @@ const {
   callAI,
   buildThinkingChain,
 } = require("./lib/ai-core");
+const { resolveDomain, isValidDomain, extractDomain } = require("./lib/ip-resolver");
 const { initAdminSdk, listDomainUsers } = require("./lib/google-admin");
 
 // Backward-compat alias (used in /api/openrouter route below)
@@ -448,14 +449,32 @@ app.post("/api/multi-ai", async (req, res) => {
     const { message, chatHistory, sessionData, mode = "fast" } = req.body;
     if (!message) return res.status(400).json({ error: "Message is required" });
 
+    // IP resolution validation for domain queries
+    let enhancedSessionData = sessionData || {};
+    if (message && (message.includes("find ip") || message.includes("get ip") || message.includes("resolve") || message.includes("bypass"))) {
+      const domainMatch = message.match(/(?:of|for)\s+([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+      if (domainMatch) {
+        const domain = extractDomain(domainMatch[1]);
+        if (isValidDomain(domain)) {
+          try {
+            const resolved = await resolveDomain(domain);
+            enhancedSessionData.resolvedIPs = resolved;
+            console.log(`✅ Resolved ${domain}:`, resolved.ipv4.join(", ") || "No A records");
+          } catch (err) {
+            console.warn(`⚠️ IP resolution failed for ${domain}:`, err.message);
+          }
+        }
+      }
+    }
+
     const isTaskRequest = TASK_KEYWORDS.some((kw) =>
       message.toLowerCase().includes(kw),
     );
     const hasHistory = chatHistory && chatHistory.length > 0;
     const systemPrompt =
       !isTaskRequest && !hasHistory
-        ? getNerdyPrompt(sessionData)
-        : getActionPrompt(sessionData);
+        ? getNerdyPrompt(enhancedSessionData)
+        : getActionPrompt(enhancedSessionData);
 
     const messages = [
       { role: "system", content: systemPrompt },
