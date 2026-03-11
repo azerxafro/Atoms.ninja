@@ -1,59 +1,60 @@
-console.log("%c🥷 Atoms Ninja: System Initializing...", "color: #10B981; font-weight: bold; font-size: 14px;");
+(() => {
+  console.log("%c🥷 Atoms Ninja: System Initializing...", "color: #10B981; font-weight: bold; font-size: 14px;");
 
-// Launch console button safety check
-const launchBtn = document.getElementById("launchBtn");
-if (launchBtn) {
-  launchBtn.addEventListener("click", () => {
-    const cmdInput = document.getElementById("commandInput");
-    if (cmdInput) cmdInput.focus();
-    const demoCard = document.querySelector(".demo-card");
-    if (demoCard) demoCard.scrollIntoView({ behavior: "smooth", block: "center" });
-  });
-}
+  // Launch console button safety check
+  const launchBtn = document.getElementById("launchBtn");
+  if (launchBtn) {
+    launchBtn.addEventListener("click", () => {
+      const cmdInput = document.getElementById("commandInput");
+      if (cmdInput) cmdInput.focus();
+      const demoCard = document.querySelector(".demo-card");
+      if (demoCard) demoCard.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }
 
-// Documentation button safety check
-const docsBtn = document.getElementById("docsBtn");
-if (docsBtn) {
-  docsBtn.addEventListener("click", () => {
-    if (typeof addTerminalLine === "function") {
-      addTerminalLine(
-        "Documentation: Visit https://atoms.ninja/docs for reference",
-        "info",
-      );
+  // Documentation button safety check
+  const docsBtn = document.getElementById("docsBtn");
+  if (docsBtn) {
+    docsBtn.addEventListener("click", () => {
+      if (typeof window.addTerminalLine === "function") {
+        window.addTerminalLine(
+          "Documentation: Visit https://atoms.ninja/docs for reference",
+          "info",
+        );
+      }
+    });
+  }
+
+  // Command input safety check
+  const commandInput = document.getElementById("commandInput");
+  if (commandInput) {
+    commandInput.addEventListener("focus", () => {
+      commandInput.style.transform = "scale(1.01)";
+    });
+
+    commandInput.addEventListener("blur", () => {
+      commandInput.style.transform = "scale(1)";
+    });
+  }
+
+  let ticking = false;
+  window.addEventListener("scroll", () => {
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        const scrolled = window.window.pageYOffset;
+        const parallaxElements = document.querySelectorAll(".demo-card");
+        parallaxElements.forEach((el) => {
+          const speed = 0.5;
+          const yPos = -(scrolled * speed);
+          el.style.transform = `translateY(${yPos}px)`;
+        });
+        ticking = false;
+      });
+      ticking = true;
     }
   });
-}
 
-// Command input safety check
-const commandInput = document.getElementById("commandInput");
-if (commandInput) {
-  commandInput.addEventListener("focus", () => {
-    commandInput.style.transform = "scale(1.01)";
-  });
-
-  commandInput.addEventListener("blur", () => {
-    commandInput.style.transform = "scale(1)";
-  });
-}
-
-let ticking = false;
-window.addEventListener("scroll", () => {
-  if (!ticking) {
-    window.requestAnimationFrame(() => {
-      const scrolled = window.window.pageYOffset;
-      const parallaxElements = document.querySelectorAll(".demo-card");
-      parallaxElements.forEach((el) => {
-        const speed = 0.5;
-        const yPos = -(scrolled * speed);
-        el.style.transform = `translateY(${yPos}px)`;
-      });
-      ticking = false;
-    });
-    ticking = true;
-  }
-});
-
-// Add floating animation to feature cards
+  // Add floating animation to feature cards
 const featureCards = document.querySelectorAll(".feature-card");
 
 featureCards.forEach((card, index) => {
@@ -998,3 +999,4 @@ function initArsenal() {
 window.addEventListener("load", () => {
   setTimeout(initArsenal, 500);
 });
+})();
