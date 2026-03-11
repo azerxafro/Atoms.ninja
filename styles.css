@@ -1634,7 +1634,7 @@ html {
 
 /* Replaced Inline Styles */
 .hidden-on-load {
-  display: none;
+  display: none !important;
 }
 .logo-custom {
   width: 40px;
