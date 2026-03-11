@@ -1325,6 +1325,14 @@ html {
   box-shadow: var(--shadow-neu-in-deep);
 }
 
+@media (max-width: 768px) {
+  .ascii-art {
+    font-size: 8px; /* Much smaller for mobile to fit */
+    overflow-x: auto; /* Allow scrolling if it still overflows */
+    padding: 10px 5px;
+  }
+}
+
 .splash-subtitle {
   font-family: var(--font-mono);
   font-size: 14px;
@@ -1393,6 +1401,13 @@ html {
   text-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
   margin-bottom: 24px;
   text-align: center;
+}
+
+@media (max-width: 768px) {
+  .login-ascii {
+    font-size: 8px; /* Match splash screen sizing for mobile */
+    overflow-x: auto;
+  }
 }
 
 .login-tagline {
