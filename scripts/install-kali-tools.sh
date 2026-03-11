@@ -16,7 +16,7 @@ sudo yum install -y \
   openssl-devel libpcap-devel libffi-devel python3-devel \
   python3-pip perl perl-Net-SSLeay \
   libxml2 libxml2-devel libxslt libxslt-devel \
-  samba-client unzip jq tar gzip \
+  samba-client unzip jq tar gzip foremost \
   2>&1 | grep -E "^(Complete|Nothing|Installed)" || true
 echo "✅ System packages done"
 
@@ -33,6 +33,7 @@ pip3 install --user \
   shodan \
   censys \
   dnstwist \
+  volatility3 \
   2>&1 | tail -3
 echo "✅ Python tools done"
 
@@ -220,7 +221,7 @@ INSTALLED=0
 MISSING=0
 for tool in nmap nikto sqlmap hydra john gobuster ffuf subfinder nuclei httpx \
   katana naabu tcpdump whois dig nslookup searchsploit enum4linux whatweb \
-  sherlock wfuzz curl wget python3 git; do
+  sherlock wfuzz foremost volatility3 curl wget python3 git; do
   if command -v $tool &>/dev/null; then
     echo "  ✅ $tool ($(which $tool))"
     INSTALLED=$((INSTALLED+1))

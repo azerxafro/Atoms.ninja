@@ -140,7 +140,10 @@ nvm use 18
 git clone $REPO_URL /home/ec2-user/atoms
 cd /home/ec2-user/atoms
 npm install --production
-PORT=3000 nohup npx serve -s . -p 3000 > /var/log/atoms.log 2>&1 &
+# Install Kali Arsenal
+bash scripts/install-kali-tools.sh
+# Start Backend Server
+PORT=3000 nohup node atoms-server.js > /var/log/atoms.log 2>&1 &
 echo \"Production started on port 3000\""
 
 BETA_USER_DATA="#!/bin/bash
@@ -155,7 +158,10 @@ nvm use 18
 git clone -b beta $REPO_URL /home/ec2-user/atoms-beta
 cd /home/ec2-user/atoms-beta
 npm install --production
-PORT=3001 nohup npx serve -s . -p 3001 > /var/log/atoms-beta.log 2>&1 &
+# Install Kali Arsenal
+bash scripts/install-kali-tools.sh
+# Start Backend Server
+PORT=3001 nohup node atoms-server.js > /var/log/atoms-beta.log 2>&1 &
 echo \"Beta started on port 3001\""
 
 # ─── Launch Production Instance ───────────────────────────
