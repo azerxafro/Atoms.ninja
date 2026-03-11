@@ -683,11 +683,13 @@ function initArsenal() {
   function toggleMobileMenu() {
     sidebar.classList.toggle("active");
     sidebarOverlay.classList.toggle("active");
+    if (menuToggle) menuToggle.classList.toggle("active");
   }
 
   function closeMobileMenu() {
     sidebar.classList.remove("active");
     sidebarOverlay.classList.remove("active");
+    if (menuToggle) menuToggle.classList.remove("active");
   }
 
   if (menuToggle) {
