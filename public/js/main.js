@@ -738,35 +738,7 @@ function initArsenal() {
     });
   });
 
-  // Link landing page cards to tabs
-  const featureCards = document.querySelectorAll(".feature-card");
-  featureCards.forEach((card, index) => {
-    card.addEventListener("click", () => {
-      // Allow access to all tabs regardless of auth
-      const tabMapping = [
-        "tab-ninja-engine",
-        "tab-ai-architect",
-        "tab-forensics",
-        "tab-reports",
-        "tab-vuln-scanner",
-        "tab-exploit-db",
-      ];
-
-      if (tabMapping[index]) {
-        const targetTab = document.querySelector(
-          `[data-tab="${tabMapping[index]}"]`,
-        );
-        if (targetTab) {
-          targetTab.click();
-          document
-            .querySelector(".demo-area")
-            .scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      }
-    });
-  });
-
-  // 1. AI Architect Chat Setup
+  // Removed featureCards listener linking to arsenal tabs to make sidebar exclusively control section visibility.
   const archSendBtn = document.getElementById("architectSendBtn");
   const archInput = document.getElementById("architectInput");
   const archChat = document.getElementById("architectChatOutput");
