@@ -9,9 +9,9 @@ const AtomsNinjaConfig = {
         endpoint: 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent'
     },
     
-    // Kali Linux MCP Server Configuration
+    // Kali Linux MCP Server Configuration (EC2 only)
     kaliMCP: {
-        endpoint: 'http://136.113.58.241:3001',
+        endpoint: 'http://localhost:3001', // Local dev → EC2 tunnel; production uses Vercel proxy
         timeout: 30000,
         maxRetries: 3
     },

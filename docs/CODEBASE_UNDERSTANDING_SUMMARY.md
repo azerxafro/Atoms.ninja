@@ -43,7 +43,7 @@ This document provides a comprehensive understanding of the Atoms.ninja codebase
 ┌─────────────────────────────────────────────────────────┐
 │  TIER 3: SERVICES (External)                            │
 │  • AI Providers (Gemini, OpenAI, Claude, Groq)         │
-│  • GCP Kali Linux VM (136.113.58.241)                  │
+│  • AWS EC2 Kali Instance (<EC2_IP>)                    │
 │  • CVE Databases (NVD, MITRE)                          │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -55,7 +55,7 @@ This document provides a comprehensive understanding of the Atoms.ninja codebase
 ### **Core Technologies**
 - **Runtime**: Node.js 18+ (backend), Vanilla JavaScript (frontend)
 - **Framework**: Express.js 4.18.2
-- **Deployment**: Vercel (serverless), Docker (containerized), GCP (VM)
+- **Deployment**: Vercel (serverless), Docker (containerized), AWS EC2
 - **AI SDKs**: Google Generative AI, OpenAI, Anthropic, Groq
 - **Security**: CORS, rate limiting, TLS/HTTPS
 
@@ -119,7 +119,7 @@ This document provides a comprehensive understanding of the Atoms.ninja codebase
 | `/api/multi-ai` | Primary AI interface | OpenAI → Gemini → Claude → Groq |
 | `/api/gemini` | Google Gemini direct | gemini-2.0-flash |
 | `/api/openai` | OpenAI direct | gpt-4o-mini |
-| `/api/kali` | Kali MCP proxy | GCP VM 136.113.58.241 |
+| `/api/kali` | Kali MCP proxy | AWS EC2 <EC2_IP> |
 | `/api/cve-lookup` | Vulnerability database | NVD, MITRE |
 | `/api/attack-chain` | Attack analysis | AI-powered |
 | `/api/ai-health` | Provider health checks | All AI services |
@@ -131,16 +131,16 @@ This document provides a comprehensive understanding of the Atoms.ninja codebase
 - Auto-converts natural language to commands
 - Returns executable JSON for tool commands
 
-### **3. Kali MCP Server (GCP VM)**
+### **3. Kali MCP Server (AWS EC2)**
 
 **File**: `kali-mcp-server.js` (372 lines)
-**Deployment**: Google Compute Engine VM
+**Deployment**: AWS EC2 Instance
 **Configuration**:
-- IP: `136.113.58.241`
+- IP: `<EC2_IP>` (set via `ATOMS_EC2_ENDPOINT` environment variable)
 - Port: `3001`
 - OS: Kali Linux 2023.4
-- Machine: e2-standard-2 (2 vCPU, 8GB RAM)
-- Region: us-central1-a
+- Instance Type: t3.large (2 vCPU, 8GB RAM)
+- Region: us-east-1
 
 **Capabilities**:
 - 500+ penetration testing tools
@@ -200,11 +200,11 @@ Frontend receives suggestion
   • Send to: POST /api/kali
   ↓
 Kali Proxy (/api/kali.js)
-  • Forward to: http://136.113.58.241:3001
+  • Forward to: http://<EC2_IP>:3001
   • Timeout: 60s
   • Retry: 3x
   ↓
-GCP Kali VM (kali-mcp-server.js)
+AWS EC2 Kali Instance (kali-mcp-server.js)
   • Validate request
   • Check sudo requirement
   • Execute: nmap -sV 8.8.8.8
@@ -265,12 +265,12 @@ EXPOSE 3001
 CMD ["node", "gemini-proxy.js"]
 ```
 
-### **Kali MCP: GCP Compute Engine**
+### **Kali MCP: AWS EC2**
 - **Instance**: atoms-kali-security
-- **IP**: 136.113.58.241 (static)
-- **Machine**: e2-standard-2
+- **IP**: <EC2_IP> (set via `ATOMS_EC2_ENDPOINT` env var)
+- **Instance Type**: t3.large
 - **OS**: Kali Linux 2023.4
-- **Disk**: 50GB SSD
+- **Disk**: 50GB EBS gp3
 - **Cost**: ~$25-50/month
 - **Auto-start**: systemd service
 
@@ -289,11 +289,11 @@ CMD ["node", "gemini-proxy.js"]
    - CORS: Restricted origins
    - Rate limiting: 100 req/15min
    - DDoS protection: Vercel Edge
-   - Firewall: GCP VPC rules
+   - Firewall: AWS Security Group rules
 
 3. **Authentication**
    - API keys in environment variables
-   - Google Cloud service accounts
+   - AWS IAM roles
    - No user authentication (public platform)
 
 4. **Input Validation**
@@ -329,7 +329,7 @@ PORT=3001
 NODE_ENV=production
 ALLOWED_ORIGINS=https://atoms.ninja
 RATE_LIMIT_MAX_REQUESTS=60
-KALI_MCP_ENDPOINT=http://136.113.58.241:3001
+KALI_MCP_ENDPOINT=http://<EC2_IP>:3001
 ```
 
 ---
@@ -356,7 +356,7 @@ KALI_MCP_ENDPOINT=http://136.113.58.241:3001
 | Component | Cost |
 |-----------|------|
 | Vercel Hosting | $0-20 (free tier) |
-| GCP Compute (e2-standard-2) | $25-50 |
+| AWS EC2 (t3.large) | $25-50 |
 | Gemini API (10K requests) | ~$2.50 |
 | OpenAI API (10K requests) | ~$1.00 |
 | **Total** | **$30-75/month** |
@@ -532,7 +532,7 @@ This understanding task has created three comprehensive documentation files:
 - **MCP Protocol**: https://modelcontextprotocol.io/
 - **Express.js**: https://expressjs.com/
 - **Docker**: https://docs.docker.com/
-- **GCP Compute**: https://cloud.google.com/compute/docs
+- **AWS EC2**: https://docs.aws.amazon.com/ec2/
 
 ---
 
@@ -551,7 +551,7 @@ This understanding task has created three comprehensive documentation files:
 ### **Architecture Decisions**
 1. **Serverless over Monolithic** - Better scalability, lower cost
 2. **Multi-AI over Single Provider** - Redundancy and failover
-3. **GCP VM for Kali** - Persistent tools, consistent environment
+3. **AWS EC2 for Kali** - Persistent tools, consistent environment
 4. **Client-Side Storage** - No backend database needed
 5. **Proxy Pattern** - Secure API key management
 6. **MCP Protocol** - Standard interface for security tools
@@ -567,7 +567,7 @@ This understanding task has created three comprehensive documentation files:
 
 ### **Cost Optimization**
 1. Vercel free tier for low traffic
-2. Single GCP VM for all tools
+2. Single AWS EC2 instance for all tools
 3. Pay-per-use AI APIs
 4. No database costs (stateless)
 5. CDN caching for static assets
@@ -580,18 +580,18 @@ This understanding task has created three comprehensive documentation files:
 ### **Current Capacity**
 - 100 users/day
 - Vercel Free Tier
-- Single GCP VM (e2-standard-2)
+- Single AWS EC2 instance (t3.large)
 - Cost: $30-50/month
 
 ### **10x Scale (1,000 users/day)**
 - Vercel Pro
-- Multiple GCP VMs with load balancer
+- Multiple AWS EC2 instances with load balancer
 - API caching layer
 - Cost: $100-200/month
 
 ### **100x Scale (10,000 users/day)**
 - Vercel Enterprise
-- Auto-scaling GCP cluster
+- Auto-scaling AWS EC2 cluster
 - Multi-region deployment
 - Redis caching
 - Cost: $500+/month

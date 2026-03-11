@@ -1,62 +1,64 @@
-# Kali Linux MCP Server - Google Cloud Setup Guide
+# Kali Linux MCP Server - AWS EC2 Setup Guide
 
 ## Overview
-This guide helps you set up a complete Kali Linux cybersecurity tools MCP server on Google Cloud Platform.
+This guide helps you set up a complete Kali Linux cybersecurity tools MCP server on AWS EC2.
 
 ## Prerequisites
-- Google Cloud Platform account
-- `gcloud` CLI installed and configured
+- AWS account with EC2 access
+- AWS CLI installed and configured (`aws configure`)
+- SSH key pair created in your target region
 - Basic understanding of Linux and security tools
 
 ## Quick Start
 
-### 1. Create GCP VM Instance
+### 1. Create EC2 Instance
 
 ```bash
-# Set your project
-gcloud config set project YOUR_PROJECT_ID
+# Launch a Kali-based EC2 instance (t3.large recommended)
+aws ec2 run-instances \
+  --image-id ami-XXXXXXXXX \
+  --instance-type t3.large \
+  --key-name your-keypair \
+  --security-group-ids sg-XXXXXXXXX \
+  --block-device-mappings '[{"DeviceName":"/dev/sda1","Ebs":{"VolumeSize":50,"VolumeType":"gp3"}}]' \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=atoms-kali-mcp}]' \
+  --user-data file://ec2-kali-setup.sh
 
-# Create a VM instance with sufficient resources
-gcloud compute instances create kali-mcp-server \
-  --zone=us-central1-a \
-  --machine-type=e2-standard-4 \
-  --boot-disk-size=50GB \
-  --boot-disk-type=pd-standard \
-  --image-family=debian-11 \
-  --image-project=debian-cloud \
-  --tags=http-server,https-server,kali-mcp \
-  --metadata-from-file startup-script=gcp-kali-setup.sh
+# Or use the AWS Console to launch a Kali Linux AMI from the Marketplace
 ```
 
-### 2. Configure Firewall Rules
+### 2. Configure Security Group
 
 ```bash
-# Allow MCP server traffic
-gcloud compute firewall-rules create allow-kali-mcp \
-  --allow=tcp:3001 \
-  --target-tags=kali-mcp \
-  --source-ranges=0.0.0.0/0 \
-  --description="Allow Kali MCP Server traffic"
+# Allow MCP server traffic (port 3001)
+aws ec2 authorize-security-group-ingress \
+  --group-id sg-XXXXXXXXX \
+  --protocol tcp \
+  --port 3001 \
+  --cidr 0.0.0.0/0 \
+  --description "Allow Kali MCP Server traffic"
 
-# Allow main app traffic
-gcloud compute firewall-rules create allow-app \
-  --allow=tcp:3000 \
-  --target-tags=http-server \
-  --source-ranges=0.0.0.0/0
+# Allow SSH access
+aws ec2 authorize-security-group-ingress \
+  --group-id sg-XXXXXXXXX \
+  --protocol tcp \
+  --port 22 \
+  --cidr YOUR_IP/32 \
+  --description "SSH access"
 ```
 
-### 3. SSH into VM and Complete Setup
+### 3. SSH into Instance and Complete Setup
 
 ```bash
 # SSH into your instance
-gcloud compute ssh kali-mcp-server --zone=us-central1-a
+ssh -i your-keypair.pem ec2-user@<EC2_IP>
 
 # Navigate to your project directory
 cd /path/to/atoms
 
 # Run the setup script
-chmod +x gcp-kali-setup.sh
-./gcp-kali-setup.sh
+chmod +x ec2-kali-setup.sh
+./ec2-kali-setup.sh
 ```
 
 ### 4. Start the Service
@@ -200,10 +202,14 @@ sudo certbot certonly --standalone -d your-domain.com
 ```
 
 ### 3. Restrict Access
-Update firewall rules to allow only specific IPs:
+Update security group to allow only specific IPs:
 ```bash
-gcloud compute firewall-rules update allow-kali-mcp \
-  --source-ranges=YOUR_IP/32
+aws ec2 authorize-security-group-ingress \
+  --group-id sg-XXXXXXXXX \
+  --protocol tcp \
+  --port 3001 \
+  --cidr YOUR_IP/32 \
+  --description "Restricted MCP access"
 ```
 
 ### 4. Enable Logging
@@ -277,9 +283,9 @@ sudo systemctl restart kali-mcp
 
 ## Cost Optimization
 
-1. **Use Preemptible VMs**: Save up to 80%
-2. **Stop VM when not in use**: `gcloud compute instances stop kali-mcp-server`
-3. **Use smaller machine types** for light workloads
+1. **Use Spot Instances**: Save up to 90%
+2. **Stop instance when not in use**: `aws ec2 stop-instances --instance-ids i-XXXXXXXXX`
+3. **Use smaller instance types** for light workloads
 4. **Set up auto-shutdown scripts** for non-business hours
 
 ## Legal & Ethical Considerations
@@ -303,7 +309,7 @@ sudo systemctl restart kali-mcp
 ## Support & Resources
 
 - [Kali Linux Documentation](https://www.kali.org/docs/)
-- [Google Cloud Documentation](https://cloud.google.com/docs)
+- [AWS EC2 Documentation](https://docs.aws.amazon.com/ec2/)
 - [MCP Protocol](https://modelcontextprotocol.io/)
 
 ---

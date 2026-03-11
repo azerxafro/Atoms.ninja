@@ -1,8 +1,6 @@
 // Atoms Ninja — Vercel API Handler
-// Works in two modes:
-//   1. PROXY MODE: Forwards to EC2 when ATOMS_EC2_ENDPOINT is set
-//   2. DIRECT MODE: Calls AI directly (fallback when no EC2)
-// Both modes support the AI thinking chain + tool output.
+// All tool execution is proxied to EC2 — local execution is never allowed.
+// AI-only queries can run directly when EC2 is unavailable.
 
 const {
   corsHeaders,
@@ -117,6 +115,7 @@ async function fetchDiscordUser(accessToken) {
 }
 
 // ─── Process AI Request Directly (no EC2) ─────
+// AI reasoning runs here; tool execution MUST go through EC2.
 async function processAIDirect(body) {
   const { message, chatHistory, sessionData } = body;
   if (!message) return { status: 400, data: { error: "Message is required" } };
@@ -147,61 +146,87 @@ async function processAIDirect(body) {
           ec2Endpoint: EC2_ENDPOINT,
         });
 
-        // If EC2 is available, try to execute the tool there
-        if (EC2_ENDPOINT) {
-          try {
-            const fullCmd = parsed.command.trim();
-            const isChained = /[&|;]/.test(fullCmd);
-            let execResult;
-
-            if (isChained) {
-              // Chained command — use shell execution endpoint
-              execResult = await proxyToEC2(
-                "/api/execute-shell",
-                { shellCommand: fullCmd },
-                300000,
-              );
-            } else {
-              // Single command — use standard execute
-              const cmdParts = fullCmd.split(/\s+/);
-              execResult = await proxyToEC2(
-                "/api/execute",
-                {
-                  command: cmdParts[0],
-                  args: cmdParts.slice(1),
-                },
-                300000,
-              );
-            }
-
-            if (execResult.data && !execResult.data.error) {
-              thinking.push({
-                step: 4,
-                title: "🔍 Analyzing Results",
-                content: `Execution complete. Output: ${(execResult.data.result || "").length} chars.`,
-              });
-              return {
-                status: 200,
-                data: {
-                  provider: aiResult.provider,
-                  model: aiResult.model,
-                  autoExecute: parsed,
-                  response: parsed.explanation,
-                  thinking,
-                  toolOutput: {
-                    result: execResult.data.result,
-                    stderr: execResult.data.stderr,
-                    exitCode: execResult.data.exitCode,
-                  },
-                },
-              };
-            }
-          } catch (e) {
-            // EC2 unreachable, fall through to return command without execution
-          }
+        // EC2 is REQUIRED for all tool execution — no local fallback
+        if (!EC2_ENDPOINT) {
+          thinking.push({
+            step: 4,
+            title: "⚠️ EC2 Arsenal Offline",
+            content: "ATOMS_EC2_ENDPOINT not configured — tool execution unavailable.",
+          });
+          return {
+            status: 503,
+            data: {
+              error: "EC2 arsenal not connected — cannot execute tools",
+              hint: "Set ATOMS_EC2_ENDPOINT env var to enable tool execution",
+              autoExecute: parsed,
+              thinking,
+            },
+          };
         }
 
-        // Return command for frontend to execute via its own Kali proxy
+        try {
+          const fullCmd = parsed.command.trim();
+          const isChained = /[&|;]/.test(fullCmd);
+          let execResult;
+
+          if (isChained) {
+            execResult = await proxyToEC2(
+              "/api/execute-shell",
+              { shellCommand: fullCmd },
+              300000,
+            );
+          } else {
+            const cmdParts = fullCmd.split(/\s+/);
+            execResult = await proxyToEC2(
+              "/api/execute",
+              {
+                command: cmdParts[0],
+                args: cmdParts.slice(1),
+              },
+              300000,
+            );
+          }
+
+          if (execResult.data && !execResult.data.error) {
+            thinking.push({
+              step: 4,
+              title: "🔍 Analyzing Results",
+              content: `Execution complete. Output: ${(execResult.data.result || "").length} chars.`,
+            });
+            return {
+              status: 200,
+              data: {
+                provider: aiResult.provider,
+                model: aiResult.model,
+                autoExecute: parsed,
+                response: parsed.explanation,
+                thinking,
+                toolOutput: {
+                  result: execResult.data.result,
+                  stderr: execResult.data.stderr,
+                  exitCode: execResult.data.exitCode,
+                },
+              },
+            };
+          }
+        } catch (e) {
+          // EC2 unreachable — report error, never execute locally
+          thinking.push({
+            step: 4,
+            title: "⚠️ EC2 Unreachable",
+            content: `Could not reach EC2 arsenal: ${e.message}`,
+          });
+          return {
+            status: 503,
+            data: {
+              error: "EC2 arsenal unreachable — tool execution failed",
+              autoExecute: parsed,
+              thinking,
+            },
+          };
+        }
+
+        // EC2 returned an error in the response body
         return {
           status: 200,
           data: {
@@ -283,8 +308,37 @@ async function processAIDirect(body) {
                 };
               }
             } catch (e) {
-              /* EC2 unreachable */
+              // EC2 unreachable — return error, never execute locally
+              thinking.push({
+                step: 4,
+                title: "⚠️ EC2 Unreachable",
+                content: `Could not reach EC2 arsenal: ${e.message}`,
+              });
+              return {
+                status: 503,
+                data: {
+                  error: "EC2 arsenal unreachable — tool execution failed",
+                  autoExecute: parsed,
+                  thinking,
+                },
+              };
             }
+          } else {
+            // No EC2 configured — refuse execution
+            thinking.push({
+              step: 4,
+              title: "⚠️ EC2 Arsenal Offline",
+              content: "ATOMS_EC2_ENDPOINT not configured — tool execution unavailable.",
+            });
+            return {
+              status: 503,
+              data: {
+                error: "EC2 arsenal not connected — cannot execute tools",
+                hint: "Set ATOMS_EC2_ENDPOINT env var to enable tool execution",
+                autoExecute: parsed,
+                thinking,
+              },
+            };
           }
           return {
             status: 200,

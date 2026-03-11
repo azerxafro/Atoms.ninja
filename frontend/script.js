@@ -156,13 +156,13 @@ const CONFIG = {
     window.location.hostname === "127.0.0.1"
       ? "http://localhost:3001"
       : "https://atoms-gefv7hacq-achuashwin98-4594s-projects.vercel.app", // Production backend URL
-  // Use HTTPS proxy for MCP to avoid mixed content issues
+  // All execution is routed through EC2 via the Vercel API proxy
   KALI_MCP_ENDPOINT:
     window.location.protocol === "file:" ||
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1"
-      ? "http://136.113.58.241:3001" // Direct connection in local dev
-      : "https://atoms-gefv7hacq-achuashwin98-4594s-projects.vercel.app/api/kali", // Proxy in production
+      ? "http://localhost:3001" // Local dev → EC2 tunnel on localhost
+      : "https://atoms-gefv7hacq-achuashwin98-4594s-projects.vercel.app/api/kali", // Production → EC2 via Vercel proxy
 };
 
 // Terminal functionality
@@ -647,7 +647,7 @@ async function simulateNmap(command) {
   return await executeSecurityTool(command, "nmap");
 }
 
-// Execute scan via GCP MCP Server (through proxy in production)
+// Execute scan via EC2 Kali Arsenal (through proxy in production)
 async function simulateScan(command) {
   addTerminalLine("🎯 Processing, Chief...", "info");
 

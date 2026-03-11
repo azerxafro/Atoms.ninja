@@ -21,7 +21,7 @@ User Browser
 [atoms-ninja.vercel.app]
     ↓
     ├─→ AI Questions → https://atoms-dun.vercel.app/api/gemini → Google Gemini API
-    └─→ Security Scans → http://136.113.58.241:3001 → GCP Kali Linux VM
+    └─→ Security Scans → http://<EC2_IP>:3001 → AWS EC2 Kali Instance
 ```
 
 ## ✅ Configuration
@@ -30,7 +30,7 @@ User Browser
 ```javascript
 const CONFIG = {
     BACKEND_API_URL: 'https://atoms-dun.vercel.app',  // Gemini proxy
-    KALI_MCP_ENDPOINT: 'http://136.113.58.241:3001'   // GCP Kali VM
+    KALI_MCP_ENDPOINT: 'http://<EC2_IP>:3001'   // AWS EC2 Kali Instance
 };
 ```
 
@@ -42,7 +42,7 @@ const CONFIG = {
 
 1. **Visit**: https://atoms-ninja.vercel.app
 2. **Run Commands**:
-   - `scan 8.8.8.8` → Real nmap scan via GCP Kali VM
+   - `scan 8.8.8.8` → Real nmap scan via AWS EC2 Kali Instance
    - `What is SQL injection?` → AI response via Gemini
 3. **All processing happens server-side** - no API keys in browser
 
@@ -70,14 +70,14 @@ vercel --prod --config vercel.json
 |---------|------------------|------------|
 | Frontend | http://localhost:8000 | https://atoms-ninja.vercel.app |
 | Gemini Backend | http://localhost:3001 | https://atoms-dun.vercel.app |
-| Kali MCP | http://136.113.58.241:3001 | http://136.113.58.241:3001 |
+| Kali MCP | http://<EC2_IP>:3001 | http://<EC2_IP>:3001 |
 
 ## ⚠️ Important Notes
 
-1. **GCP VM must be running** - If scans fail, check GCP Console
+1. **EC2 instance must be running** - If scans fail, check AWS Console
 2. **API key is secure** - Only in Vercel environment variables, never in code
 3. **CORS enabled** - Backend accepts requests from any origin (configured for public use)
-4. **HTTP for MCP** - GCP VM uses HTTP (not HTTPS) on port 3001
+4. **HTTP for MCP** - EC2 instance uses HTTP (not HTTPS) on port 3001
 
 ## 🧪 Testing Production
 
@@ -91,7 +91,7 @@ curl -X POST https://atoms-dun.vercel.app/api/gemini \
   -d '{"prompt": "Hello", "temperature": 0.7, "maxTokens": 20}'
 
 # Test Kali MCP
-curl http://136.113.58.241:3001/health
+curl http://<EC2_IP>:3001/health
 ```
 
 ## 📊 Monitoring

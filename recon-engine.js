@@ -1,11 +1,35 @@
-const { exec } = require('child_process');
-const { promisify } = require('util');
-const execAsync = promisify(exec);
+const fetch = globalThis.fetch || require("node-fetch");
+
+const EC2_ENDPOINT = process.env.ATOMS_EC2_ENDPOINT || "";
+
+// Execute a command on EC2 via the proxy — never locally
+async function execOnEC2(command, args = [], timeout = 30000) {
+  if (!EC2_ENDPOINT) {
+    throw new Error("EC2 arsenal not connected (ATOMS_EC2_ENDPOINT not set)");
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(`${EC2_ENDPOINT}/api/execute`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ command, args }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    return { stdout: data.result || data.stdout || "" };
+  } catch (error) {
+    clearTimeout(timer);
+    throw error;
+  }
+}
 
 class ReconEngine {
   async findIP(domain) {
     try {
-      const { stdout } = await execAsync(`dig +short ${domain} A`);
+      const { stdout } = await execOnEC2("dig", ["+short", domain, "A"]);
       const ips = stdout.trim().split('\n').filter(ip => ip.match(/^\d+\.\d+\.\d+\.\d+$/));
       
       return {
@@ -39,13 +63,8 @@ class ReconEngine {
   async bypassWAF(domain) {
     const methods = [];
     
-    // Method 1: Certificate Transparency
     methods.push(this.checkCertTransparency(domain));
-    
-    // Method 2: Historical DNS
     methods.push(this.checkHistoricalDNS(domain));
-    
-    // Method 3: Subdomain enumeration
     methods.push(this.enumerateSubdomains(domain));
     
     const results = await Promise.all(methods);
@@ -54,7 +73,7 @@ class ReconEngine {
 
   async checkCertTransparency(domain) {
     try {
-      const { stdout } = await execAsync(`curl -s "https://crt.sh/?q=%.${domain}&output=json"`);
+      const { stdout } = await execOnEC2("curl", ["-s", `https://crt.sh/?q=%.${domain}&output=json`], 15000);
       const certs = JSON.parse(stdout);
       const subdomains = [...new Set(certs.map(c => c.name_value))];
       return { method: 'cert_transparency', subdomains: subdomains.slice(0, 10) };
@@ -65,7 +84,7 @@ class ReconEngine {
 
   async checkHistoricalDNS(domain) {
     try {
-      const { stdout } = await execAsync(`dig ${domain} ANY +short`);
+      const { stdout } = await execOnEC2("dig", [domain, "ANY", "+short"]);
       return { method: 'historical_dns', records: stdout.trim().split('\n') };
     } catch {
       return { method: 'historical_dns', records: [] };
@@ -78,7 +97,7 @@ class ReconEngine {
     
     for (const sub of common) {
       try {
-        const { stdout } = await execAsync(`dig ${sub}.${domain} +short A`);
+        const { stdout } = await execOnEC2("dig", [`${sub}.${domain}`, "+short", "A"]);
         const ip = stdout.trim().split('\n')[0];
         if (ip && ip.match(/^\d+\.\d+\.\d+\.\d+$/)) {
           const isCF = await this.isCloudFlare(ip);

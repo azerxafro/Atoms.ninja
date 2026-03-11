@@ -76,7 +76,7 @@ The platform is built on a high-availability, secure three-tier architecture:
 graph TD
     A["Terminal Interface - Vercel"] -->|Secure API| B["Orchestration Layer - Vercel Proxy"]
     B -->|AI Analysis| C[Google Gemini API]
-    B -->|Tool Execution| D[GCP Kali Linux VM]
+    B -->|Tool Execution| D[AWS EC2 Kali Instance]
     D -->|500+ Tools| E[Target Infrastructure]
 ```
 
@@ -88,7 +88,7 @@ graph TD
 
 - Node.js 18+
 - Vercel CLI (for cloud deployment)
-- GCP Compute Engine (for Kali MCP instance)
+- AWS EC2 (for Kali MCP instance)
 
 ### Local Setup
 
