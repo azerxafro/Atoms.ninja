@@ -1,41 +1,52 @@
-// Launch console button
-launchBtn.addEventListener("click", () => {
-  document.getElementById("commandInput").focus();
-  document
-    .querySelector(".demo-card")
-    .scrollIntoView({ behavior: "smooth", block: "center" });
-});
+console.log("%c🥷 Atoms Ninja: System Initializing...", "color: #10B981; font-weight: bold; font-size: 14px;");
 
-// Documentation button
-docsBtn.addEventListener("click", () => {
-  addTerminalLine(
-    "Documentation: Visit https://atoms.ninja/docs for reference",
-    "info",
-  );
-});
+// Launch console button safety check
+const launchBtn = document.getElementById("launchBtn");
+if (launchBtn) {
+  launchBtn.addEventListener("click", () => {
+    const cmdInput = document.getElementById("commandInput");
+    if (cmdInput) cmdInput.focus();
+    const demoCard = document.querySelector(".demo-card");
+    if (demoCard) demoCard.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+}
 
-// Add typing effect to command input
-commandInput.addEventListener("focus", () => {
-  commandInput.style.transform = "scale(1.01)";
-});
+// Documentation button safety check
+const docsBtn = document.getElementById("docsBtn");
+if (docsBtn) {
+  docsBtn.addEventListener("click", () => {
+    if (typeof addTerminalLine === "function") {
+      addTerminalLine(
+        "Documentation: Visit https://atoms.ninja/docs for reference",
+        "info",
+      );
+    }
+  });
+}
 
-commandInput.addEventListener("blur", () => {
-  commandInput.style.transform = "scale(1)";
-});
+// Command input safety check
+const commandInput = document.getElementById("commandInput");
+if (commandInput) {
+  commandInput.addEventListener("focus", () => {
+    commandInput.style.transform = "scale(1.01)";
+  });
+
+  commandInput.addEventListener("blur", () => {
+    commandInput.style.transform = "scale(1)";
+  });
+}
+
 let ticking = false;
-
 window.addEventListener("scroll", () => {
   if (!ticking) {
     window.requestAnimationFrame(() => {
-      const scrolled = window.pageYOffset;
+      const scrolled = window.window.pageYOffset;
       const parallaxElements = document.querySelectorAll(".demo-card");
-
       parallaxElements.forEach((el) => {
         const speed = 0.5;
         const yPos = -(scrolled * speed);
         el.style.transform = `translateY(${yPos}px)`;
       });
-
       ticking = false;
     });
     ticking = true;
