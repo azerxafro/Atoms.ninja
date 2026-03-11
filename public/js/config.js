@@ -12,11 +12,5 @@
     });
   });
 
-  // Configuration - Always use www.atoms.ninja
-  const CONFIG = {
-    BACKEND_API_URL: "https://www.atoms.ninja/api",
-    KALI_MCP_ENDPOINT: "https://www.atoms.ninja/api/kali",
-    AI_ENDPOINT: "https://www.atoms.ninja/api/multi-ai", // Multi-AI via OpenRouter
-    AI_HEALTH_ENDPOINT: "https://www.atoms.ninja/api/ai-health",
-    AI_MODE: "fast", // fast | accurate | stealth
-  };
+// Configuration is loaded from shared-config.js and the root config.js
+// so we don't need a duplicate CONFIG declaration here.

@@ -738,7 +738,7 @@ async function executeScan(command) {
     addTerminalLine("🥷 Connecting to Ninja...", "info");
     addTerminalLine(`⚡ Scanning ${target}...`, "info");
 
-    // Fix: Use generic backend API URL instead of appending to KALI_MCP_ENDPOINT
+    // Use generic backend API URL
     const endpoint = `${CONFIG.BACKEND_API_URL}/tools/nmap`;
 
     console.log("🔧 DEBUG - Endpoint:", endpoint);

@@ -702,17 +702,10 @@ function initArsenal() {
 
 
 
-  // Show Arsenal only if authenticated
-  if (isAuth) {
-    if (arsenalLayout) arsenalLayout.style.display = "flex";
-    document.getElementById("loginGate").style.display = "none";
-    document.getElementById("mainApp").style.display = "flex";
-  } else {
-    document.getElementById("mainApp").style.display = "none";
-    document.getElementById("loginGate").style.display = "flex";
-    return; // Stop initialization if not auth'd
-  }
-
+  // Show Arsenal immediately, auth is optional
+  if (arsenalLayout) arsenalLayout.style.display = "flex";
+  document.getElementById("loginGate").style.display = "none";
+  document.getElementById("mainApp").style.display = "flex";
   // Handle sidebar clicks
   const sidebarItems = document.querySelectorAll(".sidebar-item");
   const arsenalTabs = document.querySelectorAll(".arsenal-tab");
@@ -749,14 +742,7 @@ function initArsenal() {
   const featureCards = document.querySelectorAll(".feature-card");
   featureCards.forEach((card, index) => {
     card.addEventListener("click", () => {
-      if (!isAuth) {
-        alert("Please authenticate with Discord first to access the Arsenal.");
-        document
-          .querySelector(".header")
-          .scrollIntoView({ behavior: "smooth" });
-        return;
-      }
-
+      // Allow access to all tabs regardless of auth
       const tabMapping = [
         "tab-ninja-engine",
         "tab-ai-architect",
