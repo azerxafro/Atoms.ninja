@@ -704,8 +704,10 @@ function initArsenal() {
 
   // Show Arsenal immediately, auth is optional
   if (arsenalLayout) arsenalLayout.style.display = "flex";
-  document.getElementById("loginGate").style.display = "none";
-  document.getElementById("mainApp").style.display = "flex";
+  const loginGate = document.getElementById("loginGate");
+  const mainApp = document.getElementById("mainApp");
+  if (loginGate) { loginGate.style.display = "none"; loginGate.classList.add("hidden-on-load"); }
+  if (mainApp) { mainApp.style.display = "flex"; mainApp.classList.remove("hidden-on-load"); }
   // Handle sidebar clicks
   const sidebarItems = document.querySelectorAll(".sidebar-item");
   const arsenalTabs = document.querySelectorAll(".arsenal-tab");
@@ -831,6 +833,7 @@ function initArsenal() {
 
   if (forensicsDemoBtn) {
     forensicsDemoBtn.addEventListener("click", async () => {
+      forensicsOutput.classList.remove("hidden-on-load");
       forensicsOutput.style.display = "block";
       forensicsOutput.innerHTML = `<div class="terminal-line"><span class="terminal-prompt">atom@ninja:~#</span><span class="terminal-text">Running forensic analysis tools on AWS EC2...</span></div>`;
 

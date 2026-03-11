@@ -127,7 +127,11 @@ function typeSubtitle(el, text, idx, onDone) {
 }
 
 function showLoginGate() {
-  document.getElementById("loginGate").style.display = "flex";
+  const gate = document.getElementById("loginGate");
+  if (gate) {
+    gate.classList.remove("hidden-on-load");
+    gate.style.display = "flex";
+  }
   // Type the terminal message
   const typingEl = document.getElementById("loginTyping");
   const msg = "access denied. authenticate to proceed...";
@@ -143,7 +147,11 @@ function showLoginGate() {
 }
 
 function showMainApp() {
-  document.getElementById("mainApp").style.display = "flex";
+  const app = document.getElementById("mainApp");
+  if (app) {
+    app.classList.remove("hidden-on-load");
+    app.style.display = "flex";
+  }
   // Update nav auth UI
   const stored = localStorage.getItem("discord_user");
   if (stored) {
@@ -287,14 +295,14 @@ function updateAuthUI(userData) {
   const nameSpan = document.getElementById("userName");
 
   if (userData) {
-    if (loginBtn) loginBtn.style.display = "none";
-    if (profileDiv) profileDiv.style.display = "flex";
+    if (loginBtn) { loginBtn.style.display = "none"; loginBtn.classList.add("hidden-on-load"); }
+    if (profileDiv) { profileDiv.style.display = "flex"; profileDiv.classList.remove("hidden-on-load"); }
     if (avatarImg) avatarImg.src = userData.avatar;
     if (nameSpan)
       nameSpan.textContent = userData.globalName || userData.username;
   } else {
-    if (loginBtn) loginBtn.style.display = "flex";
-    if (profileDiv) profileDiv.style.display = "none";
+    if (loginBtn) { loginBtn.style.display = "flex"; loginBtn.classList.remove("hidden-on-load"); }
+    if (profileDiv) { profileDiv.style.display = "none"; profileDiv.classList.add("hidden-on-load"); }
   }
 }
 
@@ -306,8 +314,10 @@ async function signOut() {
   } catch (e) {}
   updateAuthUI(null);
   // Show login gate again
-  document.getElementById("mainApp").style.display = "none";
-  document.getElementById("loginGate").style.display = "flex";
+  const mainApp = document.getElementById("mainApp");
+  const loginGate = document.getElementById("loginGate");
+  if (mainApp) { mainApp.style.display = "none"; mainApp.classList.add("hidden-on-load"); }
+  if (loginGate) { loginGate.style.display = "flex"; loginGate.classList.remove("hidden-on-load"); }
 }
 
 // Initialize auth + splash
