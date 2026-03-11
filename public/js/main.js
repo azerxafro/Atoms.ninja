@@ -714,26 +714,34 @@ function initArsenal() {
 
   sidebarItems.forEach((item) => {
     item.addEventListener("click", () => {
+      const tabId = item.getAttribute("data-tab");
+      console.log(`[Atoms] Sidebar click: ${tabId}`);
+      if (!tabId) return;
+
+      const allTabs = document.querySelectorAll(".arsenal-tab");
+
       // Hide all tabs and remove active state
       sidebarItems.forEach((i) => i.classList.remove("active"));
-      arsenalTabs.forEach((t) => {
+      allTabs.forEach((t) => {
         t.classList.add("hidden-on-load");
         t.classList.remove("active");
-        t.style.display = "";
+        t.style.display = "none"; // Explicitly hide
       });
 
       // Show the selected tab
       item.classList.add("active");
-      const tabId = item.getAttribute("data-tab");
       const targetTab = document.getElementById(tabId);
       if (targetTab) {
+        console.log(`[Atoms] Switching to tab: ${tabId}`);
         targetTab.classList.remove("hidden-on-load");
-        targetTab.style.display = "flex";
         targetTab.classList.add("active");
+        targetTab.style.display = "flex";
 
         // Tab specific setups
         if (tabId === "tab-reports") {
-          updateReportDashboard();
+          if (typeof updateReportDashboard === "function") {
+            updateReportDashboard();
+          }
         }
 
         // Close sidebar on mobile
