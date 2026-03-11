@@ -8,7 +8,7 @@ set -e
 
 # ─── Configuration ────────────────────────────────
 REGION="us-east-1"
-INSTANCE_TYPE="${1:-t3.small}"   # Pass t2.micro for free tier
+INSTANCE_TYPE="${1:-t3.small}"   # t3.small fits $33/mo budget; pass t2.micro for free tier
 KEY_NAME="atoms-ninja-key"
 SG_NAME="atoms-ninja-sg"
 INSTANCE_NAME="atoms-ninja-kali"
@@ -150,7 +150,7 @@ INSTANCE_ID=$(aws ec2 run-instances \
     --instance-type "$INSTANCE_TYPE" \
     --key-name "$KEY_NAME" \
     --security-group-ids "$SG_ID" \
-    --block-device-mappings "DeviceName=/dev/xvda,Ebs={VolumeSize=20,VolumeType=gp3}" \
+    --block-device-mappings "DeviceName=/dev/xvda,Ebs={VolumeSize=20,VolumeType=gp2}" \
     --user-data "$USER_DATA" \
     --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$INSTANCE_NAME}]" \
     --query 'Instances[0].InstanceId' \
