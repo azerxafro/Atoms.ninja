@@ -34,7 +34,7 @@ This repository is an officially authorized cybersecurity research and defensive
 | **SOLDIER** | — | Claude Sonnet 4.6 | Master Executor, Warriors Commander | `/SOLDIER` |
 | **NEXUS** | ATLAS | Claude Sonnet 4.6 | Elite Coder: all languages and frameworks | `/NEXUS` |
 | **SENTINEL** | ORION | Claude Sonnet 4.6 | Elite Debugger: bugs, CVE, performance | `/SENTINEL` |
-| **GUARDIAN** | TITAN | Gemini 3.1 Pro | Elite QA: testing, security validation | `/GUARDIAN` |
+| **GUARDIAN** | TITAN | Multi-AI 3.1 Pro | Elite QA: testing, security validation | `/GUARDIAN` |
 
 ## Command Syntax
 

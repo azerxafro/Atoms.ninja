@@ -2,11 +2,10 @@
 // Replace with your actual API keys
 
 const AtomsNinjaConfig = {
-    // Google Gemini AI Configuration
-    gemini: {
+    // AI Provider Configuration (managed by backend proxy — OpenRouter / Venice / Bedrock)
+    ai: {
         apiKey: '', // DO NOT SET HERE - API key is managed by backend proxy server
-        model: 'gemini-pro',
-        endpoint: 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent'
+        provider: 'openrouter'
     },
     
     // Kali Linux MCP Server Configuration (EC2 only)
@@ -41,11 +40,11 @@ if (typeof window !== 'undefined') {
     window.AtomsNinjaConfig = AtomsNinjaConfig;
     
     // Helper function to set API key
-    window.configureGeminiAPI = function(apiKey) {
-        AtomsNinjaConfig.gemini.apiKey = apiKey;
+    window.configureAI = function(apiKey) {
+        AtomsNinjaConfig.ai.apiKey = apiKey;
         if (typeof CONFIG !== 'undefined') {
-            CONFIG.GEMINI_API_KEY = apiKey;
+            CONFIG.AI_API_KEY = apiKey;
         }
-        console.log('%c✓ Gemini API configured!', 'color: #10B981; font-weight: bold;');
+        console.log('%c✓ AI API configured!', 'color: #10B981; font-weight: bold;');
     };
 }

@@ -10,7 +10,7 @@ if ! command -v vercel &> /dev/null; then
 fi
 
 # Deploy backend
-echo "📦 Deploying backend (gemini-proxy.js)..."
+echo "📦 Deploying backend (atoms-server.js)..."
 vercel --prod --yes
 
 # Get the deployment URL
@@ -24,5 +24,5 @@ echo "Next steps:"
 echo "1. Update frontend to use backend URL: https://$BACKEND_URL"
 echo "2. Deploy frontend from /frontend directory"
 echo "3. Set environment variables in Vercel dashboard:"
-echo "   - GEMINI_API_KEY"
+echo "   - OPENROUTER_API_KEY"
 echo "   - ALLOWED_ORIGINS"

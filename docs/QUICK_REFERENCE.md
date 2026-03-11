@@ -39,13 +39,13 @@ Atoms.ninja/
 ├── api/
 │   ├── index.js           ← Main API router
 │   ├── multi-ai.js        ← AI orchestration
-│   ├── gemini.js          ← Google Gemini
+│   ├── multi-ai.js          ← Multi-AI Engine
 │   ├── openai.js          ← OpenAI GPT
 │   ├── kali.js            ← Kali MCP proxy
 │   ├── cve-lookup.js      ← Vulnerability DB
 │   └── ai-health.js       ← Health checks
 │
-├── gemini-proxy.js         ← Standalone backend
+├── atoms-server.js         ← Standalone backend
 ├── kali-mcp-server.js      ← Kali MCP server
 ├── package.json            ← Dependencies
 ├── Dockerfile              ← Docker config
@@ -59,7 +59,7 @@ Atoms.ninja/
 
 ```env
 # Required
-GEMINI_API_KEY=AIza...              # Get from: aistudio.google.com/app/apikey
+OPENROUTER_API_KEY=AIza...              # Get from: openrouter.ai/keys
 OPENAI_API_KEY=sk-...               # Optional
 ANTHROPIC_API_KEY=sk-ant-...        # Optional
 
@@ -88,7 +88,7 @@ GET /api/ai-health
 ### **AI**
 ```bash
 POST /api/multi-ai          # Primary AI interface
-POST /api/gemini            # Google Gemini direct
+POST /api/multi-ai            # Multi-AI Engine direct
 POST /api/openai            # OpenAI GPT direct
 ```
 
@@ -174,7 +174,7 @@ autoExecuteCommand(cmdObj)  // Auto-execute AI suggestion
 ### **AI Integration**
 ```javascript
 callMultiAI(prompt)         // Call AI with context
-callGemini(prompt)          // Direct Gemini call
+callAI(prompt)          // Direct Multi-AI call
 callOpenAI(prompt)          // Direct OpenAI call
 ```
 
@@ -260,10 +260,10 @@ kill -9 <PID>   # If port is in use
 
 # Check environment variables
 cat .env
-echo $GEMINI_API_KEY
+echo $OPENROUTER_API_KEY
 
 # Run with debug
-DEBUG=* node gemini-proxy.js
+DEBUG=* node atoms-server.js
 ```
 
 ### **CORS errors**
@@ -271,7 +271,7 @@ DEBUG=* node gemini-proxy.js
 // Update .env
 ALLOWED_ORIGINS=http://localhost:8000,https://atoms.ninja
 
-// Or in gemini-proxy.js
+// Or in atoms-server.js
 const allowedOrigins = ['http://localhost:8000', 'https://atoms.ninja'];
 ```
 
@@ -294,7 +294,7 @@ journalctl -u atoms-kali-mcp -f
 # Test API key
 curl -H "Content-Type: application/json" \
   -d '{"prompt":"test"}' \
-  http://localhost:3001/api/gemini
+  http://localhost:3001/api/multi-ai
 
 # Check API health
 curl http://localhost:3001/api/ai-health
@@ -319,8 +319,8 @@ curl http://localhost:3001/api/ai-health
 # Health check
 curl http://localhost:3001/health
 
-# Test Gemini AI
-curl -X POST http://localhost:3001/api/gemini \
+# Test AI Engine
+curl -X POST http://localhost:3001/api/multi-ai \
   -H "Content-Type: application/json" \
   -d '{"prompt": "What is SQL injection?"}'
 
@@ -368,7 +368,7 @@ npm i -g vercel
 vercel login
 
 # Set secrets
-vercel env add GEMINI_API_KEY production
+vercel env add OPENROUTER_API_KEY production
 vercel env add OPENAI_API_KEY production
 
 # Deploy
@@ -386,7 +386,7 @@ docker build -t atoms-ninja-backend .
 
 # Run
 docker run -d -p 3001:3001 \
-  -e GEMINI_API_KEY=$GEMINI_API_KEY \
+  -e OPENROUTER_API_KEY=$OPENROUTER_API_KEY \
   --name atoms-backend \
   atoms-ninja-backend
 
@@ -439,7 +439,7 @@ free -h
 docker stats atoms-backend
 
 # CPU usage
-top -p $(pgrep -f gemini-proxy)
+top -p $(pgrep -f openrouter-multi-modelxy)
 ```
 
 ### **Vercel Analytics**
@@ -484,7 +484,7 @@ Analyze the scan results from 192.168.1.1
 - **Architecture**: See ARCHITECTURE_DIAGRAM.md
 - **Deployment**: See DEPLOYMENT.md
 - **GitHub**: github.com/azerxafro/Atoms.ninja
-- **Gemini API**: aistudio.google.com/app/apikey
+- **AI API**: openrouter.ai/keys
 - **Kali Tools**: kali.org/tools
 - **Vercel Docs**: vercel.com/docs
 

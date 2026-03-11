@@ -14,7 +14,7 @@ You now have a **production-ready cybersecurity platform** with:
 
 ### Backend (Node.js Proxy)
 - ✅ Express.js server for service account auth
-- ✅ Google Gemini API integration
+- ✅ Multi-AI Engine API integration
 - ✅ CORS configuration
 - ✅ Rate limiting
 - ✅ Health check endpoint
@@ -141,7 +141,7 @@ docker run -p 3001:3001 atoms-ninja-backend
 curl http://localhost:3001/health
 
 # Test AI endpoint
-curl -X POST http://localhost:3001/api/gemini \
+curl -X POST http://localhost:3001/api/multi-ai \
   -H "Content-Type: application/json" \
   -d '{"prompt":"What is penetration testing?"}'
 ```
@@ -154,7 +154,7 @@ curl -X POST http://localhost:3001/api/gemini \
 - `index.html` - Frontend UI
 - `styles.css` - Styling
 - `script.js` - Frontend logic
-- `gemini-proxy.js` - Backend server ⭐
+- `atoms-server.js` - Backend server ⭐
 - `package.json` - Dependencies
 - `service-account.json` - Your credentials (NOT in repo)
 
@@ -177,7 +177,7 @@ Your service account needs:
 - ✅ Role: `roles/aiplatform.user` or `roles/ml.developer`
 - ✅ API calls enabled in your project
 
-Enable at: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com
+Enable at: https://openrouter.ai
 
 ---
 
@@ -200,7 +200,7 @@ Enable at: https://console.cloud.google.com/apis/library/generativelanguage.goog
        │ OAuth2
        ▼
 ┌─────────────────┐
-│  Google Gemini  │
+│  Multi-AI Engine  │
 │   API (Cloud)   │
 └─────────────────┘
 ```
@@ -224,14 +224,14 @@ Before going live:
 ## 📊 Expected Costs
 
 **For 10,000 requests/month:**
-- Gemini API: ~$2.50
+- AI API: ~$2.50
 - Backend hosting: $0-5 (Vercel free tier)
 - Frontend hosting: $0 (most platforms)
 
 **Total: $2.50-7.50/month**
 
 **For 100,000 requests/month:**
-- Gemini API: ~$25
+- AI API: ~$25
 - Backend hosting: $5-20
 - Frontend hosting: $0
 
@@ -245,7 +245,7 @@ Before going live:
 → Download the full JSON file, not just the key ID
 
 ### "API not enabled"
-→ Enable at: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com
+→ Enable at: https://openrouter.ai
 
 ### "CORS error"
 → Update `ALLOWED_ORIGINS` in `.env`

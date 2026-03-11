@@ -163,7 +163,7 @@ Atoms.ninja uses a **three-tier serverless architecture**:
 ### **AI Integration**
 Multi-provider AI with intelligent fallback:
 ```
-Request → OpenAI → Gemini → Claude → Groq → Error
+Request → OpenAI → Multi-AI → Claude → Groq → Error
          (Primary) (Backup) (Fallback) (Last Resort)
 ```
 
@@ -225,7 +225,7 @@ Client-side session persistence tracks:
 ## 🔗 External Resources
 
 ### **Official Documentation**
-- [Google Gemini API](https://ai.google.dev/docs)
+- [Multi-AI Engine API](https://openrouter.ai/docs)
 - [OpenAI API](https://platform.openai.com/docs)
 - [Vercel Documentation](https://vercel.com/docs)
 - [Express.js Guide](https://expressjs.com/)

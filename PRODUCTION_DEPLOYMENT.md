@@ -7,11 +7,11 @@
 - **Latest Deployment**: https://atoms-ninja-frontend-evo19ud1d-achuashwin98-4594s-projects.vercel.app
 - **Deployed**: 2025-11-03 01:17 UTC
 
-### Backend (Gemini API Proxy)
+### Backend (AI API Proxy)
 - **Production URL**: https://atoms-dun.vercel.app
 - **Endpoints**:
   - Health: https://atoms-dun.vercel.app/health
-  - Gemini: https://atoms-dun.vercel.app/api/gemini
+  - Multi-AI: https://atoms-dun.vercel.app/api/multi-ai
 
 ## 🎯 Architecture
 
@@ -20,7 +20,7 @@ User Browser
     ↓
 [atoms-ninja.vercel.app]
     ↓
-    ├─→ AI Questions → https://atoms-dun.vercel.app/api/gemini → Google Gemini API
+    ├─→ AI Questions → https://atoms-dun.vercel.app/api/multi-ai → Multi-AI Engine API
     └─→ Security Scans → http://<EC2_IP>:3001 → AWS EC2 Kali Instance
 ```
 
@@ -29,13 +29,13 @@ User Browser
 ### Frontend (script.js)
 ```javascript
 const CONFIG = {
-    BACKEND_API_URL: 'https://atoms-dun.vercel.app',  // Gemini proxy
+    BACKEND_API_URL: 'https://atoms-dun.vercel.app',  // AI proxy
     KALI_MCP_ENDPOINT: 'http://<EC2_IP>:3001'   // AWS EC2 Kali Instance
 };
 ```
 
-### Backend (gemini-proxy.js)
-- Environment Variable: `GEMINI_API_KEY` (set in Vercel dashboard)
+### Backend (atoms-server.js)
+- Environment Variable: `OPENROUTER_API_KEY` (set in Vercel dashboard)
 - CORS: Allows all origins (production configuration)
 
 ## 🚀 How Users Interact
@@ -43,7 +43,7 @@ const CONFIG = {
 1. **Visit**: https://atoms-ninja.vercel.app
 2. **Run Commands**:
    - `scan 8.8.8.8` → Real nmap scan via AWS EC2 Kali Instance
-   - `What is SQL injection?` → AI response via Gemini
+   - `What is SQL injection?` → AI response via Multi-AI
 3. **All processing happens server-side** - no API keys in browser
 
 ## 🔧 Deployment Process
@@ -61,7 +61,7 @@ vercel --prod --config vercel.json
 ```
 
 ### Environment Variables (Vercel Dashboard)
-- Backend project needs: `GEMINI_API_KEY`
+- Backend project needs: `OPENROUTER_API_KEY`
 - Set at: https://vercel.com/dashboard → Project Settings → Environment Variables
 
 ## 🌍 Production vs Local
@@ -69,7 +69,7 @@ vercel --prod --config vercel.json
 | Feature | Local Development | Production |
 |---------|------------------|------------|
 | Frontend | http://localhost:8000 | https://atoms-ninja.vercel.app |
-| Gemini Backend | http://localhost:3001 | https://atoms-dun.vercel.app |
+| AI Backend | http://localhost:3001 | https://atoms-dun.vercel.app |
 | Kali MCP | http://<EC2_IP>:3001 | http://<EC2_IP>:3001 |
 
 ## ⚠️ Important Notes
@@ -85,8 +85,8 @@ vercel --prod --config vercel.json
 # Test frontend
 curl https://atoms-ninja.vercel.app
 
-# Test Gemini backend
-curl -X POST https://atoms-dun.vercel.app/api/gemini \
+# Test AI backend
+curl -X POST https://atoms-dun.vercel.app/api/multi-ai \
   -H "Content-Type: application/json" \
   -d '{"prompt": "Hello", "temperature": 0.7, "maxTokens": 20}'
 

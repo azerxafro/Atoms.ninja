@@ -11,7 +11,7 @@
 ## 🔍 Verification
 
 ✅ **Frontend**: Loading correctly
-✅ **API**: Gemini responding  
+✅ **API**: AI responding  
 ✅ **Buttons**: Fixed with DOMContentLoaded
 ✅ **Speed Insights**: Enabled
 
@@ -24,7 +24,7 @@
 
 ## 📊 Features Active
 
-- ✅ AI Security Consultant (Google Gemini)
+- ✅ AI Security Consultant (Multi-AI Engine)
 - ✅ Kali Linux MCP Integration (136.113.58.241:3001)
 - ✅ Interactive Terminal
 - ✅ Speed Insights Monitoring
@@ -38,7 +38,7 @@
 curl https://atoms-6ezrsg8ou-achuashwin98-4594s-projects.vercel.app/
 
 # Test API
-curl -X POST https://atoms-6ezrsg8ou-achuashwin98-4594s-projects.vercel.app/api/gemini \
+curl -X POST https://atoms-6ezrsg8ou-achuashwin98-4594s-projects.vercel.app/api/multi-ai \
   -H "Content-Type: application/json" \
   -d '{"prompt":"Hello"}'
 
@@ -49,7 +49,7 @@ open https://atoms-6ezrsg8ou-achuashwin98-4594s-projects.vercel.app
 ## 🔧 Configuration
 
 - Backend: https://atoms.ninja/api
-- Gemini API Key: Configured ✅
+- AI API Key: Configured ✅
 - Kali MCP: http://136.113.58.241:3001 ✅
 - CORS: Enabled ✅
 

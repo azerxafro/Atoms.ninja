@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Comprehensive Test Suite for API Key and MCP Server
- * Tests that both the Gemini API and Kali MCP server are working
+ * Tests that both the AI API and Kali MCP server are working
  * and can handle user-provided tasks
  */
 

@@ -12,7 +12,7 @@ Allow: /
 User-agent: ChatGPT-User
 Allow: /
 
-# Google AI / Gemini
+# Multi-AI Engine
 User-agent: Google-Extended
 Allow: /
 

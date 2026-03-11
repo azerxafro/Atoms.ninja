@@ -8,7 +8,7 @@
 - ✅ Cleaned up duplicate wireless and password cracking endpoints
 - ✅ Ensured consistent port usage (3001)
 
-### 2. **Gemini Proxy Server (gemini-proxy.js)**
+### 2. **OpenRouter multi-modelxy Server (atoms-server.js)**
 - ✅ Added AbortController for Kali MCP proxy timeouts
 - ✅ Improved error handling with proper timeout detection
 - ✅ Fixed fetch timeout issue (removed invalid `timeout` option, using AbortController instead)
@@ -29,7 +29,7 @@
 
 ```
 ┌─────────────┐         ┌──────────────────┐         ┌─────────────────┐
-│   Frontend  │────────>│  Gemini Proxy    │────────>│  Gemini API     │
+│   Frontend  │────────>│  OpenRouter multi-modelxy    │────────>│  AI API     │
 │  (Vercel)   │         │  (Vercel)        │         │  (Google Cloud) │
 └─────────────┘         └──────────────────┘         └─────────────────┘
                                │
@@ -76,7 +76,7 @@ vercel --prod
 
 ### Backend (Vercel)
 ```env
-GEMINI_API_KEY=AIzaSy...
+OPENROUTER_API_KEY=AIzaSy...
 ALLOWED_ORIGINS=https://atoms.ninja,https://www.atoms.ninja
 NODE_ENV=production
 ```
@@ -100,9 +100,9 @@ curl https://atoms-ninja-backend.vercel.app/health
 curl http://136.113.58.241:3001/health
 ```
 
-### Test Gemini API
+### Test AI API
 ```bash
-curl -X POST https://atoms-ninja-backend.vercel.app/api/gemini \
+curl -X POST https://atoms-ninja-backend.vercel.app/api/multi-ai \
   -H "Content-Type: application/json" \
   -d '{"prompt":"Say hello","temperature":0.7,"maxTokens":50}'
 ```
@@ -116,14 +116,14 @@ curl -X POST https://atoms-ninja-backend.vercel.app/api/kali/tools/nmap \
 
 ## Server Ports
 
-- **Gemini Proxy**: Port 3001 (local), HTTPS on Vercel
+- **OpenRouter multi-modelxy**: Port 3001 (local), HTTPS on Vercel
 - **Kali MCP Server**: Port 3001 (GCP VM)
 - **Frontend**: Static hosting on Vercel
 
 ## Files Modified
 
 1. `/Users/admin/atoms/kali-mcp-server.js` - Fixed duplicate routes and error handling
-2. `/Users/admin/atoms/gemini-proxy.js` - Fixed timeout handling and error catching
+2. `/Users/admin/atoms/atoms-server.js` - Fixed timeout handling and error catching
 3. `/Users/admin/atoms/vercel.json` - Updated routing configuration
 4. `/Users/admin/atoms/deploy-mcp.sh` - Fixed port configuration
 5. Created `/Users/admin/atoms/.vercelignore` - Exclude unnecessary files
@@ -133,7 +133,7 @@ curl -X POST https://atoms-ninja-backend.vercel.app/api/kali/tools/nmap \
 ## Next Steps
 
 1. **Deploy Backend**: Run `./deploy-vercel.sh`
-2. **Set Vercel Env Vars**: Add `GEMINI_API_KEY` in Vercel dashboard
+2. **Set Vercel Env Vars**: Add `OPENROUTER_API_KEY` in Vercel dashboard
 3. **Deploy Frontend**: Navigate to `/frontend` and run `vercel --prod`
 4. **Update Frontend Config**: Point frontend to new backend URL
 5. **Optional: Deploy Kali MCP**: Run `./deploy-mcp.sh` if using GCP VM

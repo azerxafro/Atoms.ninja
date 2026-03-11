@@ -324,7 +324,7 @@ function main() {
   const exitCode = generateReport(apiResult, mcpResult, taskResult);
 
   log("\n💡 Tips:", "blue");
-  log("  • Make sure to set GEMINI_API_KEY in your .env file", "blue");
+  log("  • Make sure to set OPENROUTER_API_KEY in your .env file", "blue");
   log('  • Run "npm install" to install dependencies', "blue");
   log('  • Run "npm start" to start the backend server', "blue");
   log(

@@ -7,10 +7,10 @@
 
 ## 📦 Deployment Results
 
-### 1. ✅ Backend (Gemini Proxy)
+### 1. ✅ Backend (OpenRouter multi-modelxy)
 - **URL**: https://atoms-gefv7hacq-achuashwin98-4594s-projects.vercel.app
 - **Status**: Production - Live
-- **Features**: Gemini AI proxy, Kali MCP proxy, CORS configured
+- **Features**: AI Engine proxy, Kali MCP proxy, CORS configured
 - **Environment Variables**: Set and encrypted
 
 ### 2. ✅ Frontend (UI)
@@ -36,8 +36,8 @@ User Browser
 [atoms-ninja.vercel.app] ← Frontend (HTML/CSS/JS)
     ↓
     ├─→ AI Questions
-    │   └─→ [atoms-dun.vercel.app/api/gemini]
-    │       └─→ Google Gemini API
+    │   └─→ [atoms-dun.vercel.app/api/multi-ai]
+    │       └─→ Multi-AI Engine API
     │
     └─→ Security Scans (nmap, etc.)
         └─→ [136.113.58.241:3001] ← GCP Kali Linux VM
@@ -60,12 +60,12 @@ User Browser
 1. **Backend API** (https://atoms-dun.vercel.app)
    ```bash
    curl https://atoms-dun.vercel.app/health
-   # → {"status":"ok","service":"Atoms Ninja Gemini Proxy"}
+   # → {"status":"ok","service":"Atoms Ninja OpenRouter multi-modelxy"}
    ```
 
-2. **Gemini AI**
+2. **AI Engine**
    ```bash
-   curl -X POST https://atoms-dun.vercel.app/api/gemini \
+   curl -X POST https://atoms-dun.vercel.app/api/multi-ai \
      -H "Content-Type: application/json" \
      -d '{"prompt": "Hello", "maxTokens": 10}'
    # → Returns AI response ✅
@@ -91,7 +91,7 @@ const CONFIG = {
 
 ### .env (Backend)
 ```bash
-GEMINI_API_KEY=AIzaSyDzGlemhn-AEP5G8F0UrHuD6gWr97RV0YQ
+OPENROUTER_API_KEY=AIzaSyDzGlemhn-AEP5G8F0UrHuD6gWr97RV0YQ
 PORT=3001
 ALLOWED_ORIGINS=*
 ```
@@ -107,7 +107,7 @@ Once password protection is disabled:
 2. **Ask AI Questions**:
    ```
    User: "What is SQL injection?"
-   → Gemini AI responds with security insights
+   → AI Engine responds with security insights
    ```
 
 3. **Run Security Scans**:
@@ -158,7 +158,7 @@ Once password protection is disabled:
 
 ## �� Success Criteria Met
 
-✅ Gemini API configured and working  
+✅ AI API configured and working  
 ✅ GCP VM MCP server used exclusively (no local server)  
 ✅ Frontend updated with real scanning functions  
 ✅ Deployed to Vercel production  

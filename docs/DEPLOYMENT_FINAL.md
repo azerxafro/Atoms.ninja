@@ -71,7 +71,7 @@ function setupExecuteHandlers() {
 
 **API Endpoints (all in one function):**
 - `/api/health` - Health check
-- `/api/multi-ai` - Multi-AI with fallback (OpenAI → Gemini)
+- `/api/multi-ai` - Multi-AI with fallback (OpenAI → Multi-AI)
 - `/api/kali` - Kali MCP server proxy
 - `/api/openai` - Direct OpenAI endpoint
 
@@ -102,12 +102,12 @@ function setupExecuteHandlers() {
 - **Endpoint:** https://www.atoms.ninja/api/*
 - **Provider:** Unified handler routing to:
   - OpenAI GPT-4o-mini (primary)
-  - Google Gemini (fallback)
+  - Multi-AI Engine (fallback)
   - Kali MCP Server (GCP VM: 34.131.132.133)
 
 ### AI Configuration
 - **Primary AI:** OpenAI GPT-4o-mini
-- **Fallback:** Google Gemini Pro
+- **Fallback:** Multi-AI Engine Pro
 - **Personality:** Atom (Jarvis-style hacking architect)
 - **Behavior:** 
   - Natural language → command conversion
@@ -157,13 +157,13 @@ curl -X POST https://www.atoms.ninja/api/multi-ai \
 ### Environment Variables (Vercel)
 ```bash
 OPENAI_API_KEY=sk-svcacct-vy50x7EHoVurCu_ph***
-GEMINI_API_KEY=AIzaSyDzGlemhn-AEP5G8F0Ur***
+OPENROUTER_API_KEY=AIzaSyDzGlemhn-AEP5G8F0Ur***
 KALI_MCP_URL=https://34.131.132.133
 ```
 
 ### API Keys Status
 - ✅ OpenAI: Configured & Working
-- ✅ Gemini: Configured (fallback)
+- ✅ Multi-AI: Configured (fallback)
 - ⚠️  Kali MCP: Simulated (VM needs restart)
 
 ---
@@ -205,7 +205,7 @@ KALI_MCP_URL=https://34.131.132.133
 2. **`/api/index.js`** (NEW)
    - Unified API handler
    - Multi-endpoint routing
-   - OpenAI + Gemini integration
+   - OpenAI + Multi-AI integration
 
 3. **`/vercel.json`**
    - Added API rewrites

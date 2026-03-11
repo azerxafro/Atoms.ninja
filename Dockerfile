@@ -10,7 +10,9 @@ COPY package*.json ./
 RUN npm ci --only=production
 
 # Copy application files
-COPY gemini-proxy.js ./
+COPY atoms-server.js ./
+COPY lib/ ./lib/
+COPY shared-config.js ./
 
 # Expose port
 EXPOSE 3001
@@ -20,4 +22,4 @@ HEALTHCHECK --interval=30s --timeout=3s \
   CMD node -e "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start server
-CMD ["node", "gemini-proxy.js"]
+CMD ["node", "atoms-server.js"]

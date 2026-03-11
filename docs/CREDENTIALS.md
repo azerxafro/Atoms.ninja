@@ -26,7 +26,7 @@
 ### Generative Language API
 - **Key**: AIzaSyDzGlemhn-AEP5G8F0UrHuD6gWr97RV0YQ
 - **Type**: Unrestricted
-- **Purpose**: Google Gemini API access
+- **Purpose**: Multi-AI Engine API access
 
 ## Configuration Files
 
@@ -34,7 +34,7 @@
 ```env
 PORT=3001
 GOOGLE_APPLICATION_CREDENTIALS=./service-account.json
-GEMINI_API_KEY=AIzaSyDzGlemhn-AEP5G8F0UrHuD6gWr97RV0YQ
+OPENROUTER_API_KEY=AIzaSyDzGlemhn-AEP5G8F0UrHuD6gWr97RV0YQ
 KALI_MCP_ENDPOINT=http://136.113.58.241:3001
 ALLOWED_ORIGINS=http://localhost:8000,https://atoms-ninja.vercel.app
 RATE_LIMIT_MAX_REQUESTS=60
@@ -63,8 +63,8 @@ open index.html
 ## Testing Connections
 
 ```bash
-# Test Gemini API
-curl -X POST http://localhost:3001/api/gemini \
+# Test AI API
+curl -X POST http://localhost:3001/api/multi-ai \
   -H "Content-Type: application/json" \
   -d '{"prompt":"Hello"}'
 

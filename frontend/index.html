@@ -152,7 +152,7 @@
                 <span class="gradient-text">Atoms Ninja</span>
               </h1>
               <p class="hero-description">
-                Your personal AI security architect powered by Google Gemini.
+                Your personal AI security architect powered by multi-model AI.
                 Get expert guidance on security strategies, penetration testing,
                 forensics, and architecture design - plus direct access to 500+
                 Kali Linux tools.
@@ -448,36 +448,24 @@
         </div>
         <div class="modal-body">
           <div class="settings-section">
-            <h3>🤖 Google Gemini AI</h3>
+            <h3>🤖 AI Provider</h3>
             <p class="settings-description">
-              Configure your Gemini API key for AI-powered analysis
+              Configure your API key for AI-powered analysis
             </p>
             <div class="input-group">
-              <label for="geminiApiKey">API Key</label>
+              <label for="aiApiKey">API Key</label>
               <input
                 type="password"
-                id="geminiApiKey"
+                id="aiApiKey"
                 placeholder="Enter your OpenRouter or Venice API key"
               />
               <small>
-                <strong>Option 1:</strong> AI Studio key from
-                <a
-                  href="https://aistudio.google.com/app/apikey"
-                  target="_blank"
-                  rel="noopener"
-                  >Google AI Studio</a
-                >
-                (starts with AIza...)<br />
-                <strong>Option 2:</strong> Google Cloud API key - Must enable
-                <a
-                  href="https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com"
-                  target="_blank"
-                  rel="noopener"
-                  >Generative Language API</a
-                >
+                AI is managed by the backend proxy. Provide an
+                <strong>OpenRouter</strong> or <strong>Venice</strong> API key
+                if you want to override the default provider.
               </small>
             </div>
-            <button class="btn-primary" id="saveGeminiKey">Save API Key</button>
+            <button class="btn-primary" id="saveAiKey">Save API Key</button>
             <div id="apiKeyStatus" class="status-message"></div>
           </div>
 

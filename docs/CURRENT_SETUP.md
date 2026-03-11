@@ -2,9 +2,9 @@
 
 ## ✅ Configuration Status
 
-### 1. Google Gemini API Backend
+### 1. Multi-AI Engine API Backend
 - **Status**: ✅ Running on port 3001
-- **Endpoint**: http://localhost:3001/api/gemini
+- **Endpoint**: http://localhost:3001/api/multi-ai
 - **API Key**: Configured in .env file
 - **Test**: Working - responds to AI queries
 
@@ -20,7 +20,7 @@
 
 ### 3. Frontend Configuration
 - **File**: script.js
-- **Gemini Backend**: http://localhost:3001 (local dev) / Vercel proxy (production)
+- **AI Backend**: http://localhost:3001 (local dev) / Vercel proxy (production)
 - **MCP Endpoint**: Vercel proxy → EC2 (production) / localhost:3001 tunnel (local dev)
 - **Local MCP**: ❌ Disabled (all execution routed to EC2)
 
@@ -32,16 +32,16 @@
    - Results → Frontend
 
 2. **User asks an AI question** (e.g., "What is SQL injection?")
-   - Frontend → Vercel API / Gemini Proxy
-   - Proxy → Google Gemini API (with API key)
+   - Frontend → Vercel API / OpenRouter multi-modelxy
+   - Proxy → Multi-AI Engine API (with API key)
    - Response → Frontend
 
 ## 🚀 Running the Stack
 
 ```bash
-# Start Gemini API Backend (localhost only)
+# Start AI API Backend (localhost only)
 cd /Users/admin/atoms
-node gemini-proxy.js &
+node atoms-server.js &
 
 # EC2 Kali MCP Server runs on the EC2 instance
 # Set ATOMS_EC2_ENDPOINT in your environment
@@ -49,7 +49,7 @@ node gemini-proxy.js &
 
 ## 📝 Configuration Files
 
-- `.env` - Contains GEMINI_API_KEY and ATOMS_EC2_ENDPOINT
+- `.env` - Contains OPENROUTER_API_KEY and ATOMS_EC2_ENDPOINT
 - `script.js` - Frontend configuration (routes through Vercel proxy to EC2)
 - `config.js` - Frontend config (dynamic, uses current origin)
 
@@ -57,7 +57,7 @@ node gemini-proxy.js &
 
 ### Check Status
 ```bash
-# Check Gemini backend
+# Check AI backend
 curl http://localhost:3001/health
 
 # Check EC2 MCP (replace with your EC2 IP)
@@ -66,7 +66,7 @@ curl http://<EC2_IP>:3001/health
 
 ### Restart Backend
 ```bash
-cd /Users/admin/atoms && node gemini-proxy.js &
+cd /Users/admin/atoms && node atoms-server.js &
 ```
 
 ## ⚠️ Important Notes
@@ -74,5 +74,5 @@ cd /Users/admin/atoms && node gemini-proxy.js &
 1. **All tool execution runs on EC2** - Never execute locally
 2. **API Key is secret** - Never commit .env to git
 3. **EC2 instance must be running** - Check AWS Console if scans fail
-4. **Backend needed for AI** - Gemini proxy must run for AI features
+4. **Backend needed for AI** - AI proxy must run for AI features
 

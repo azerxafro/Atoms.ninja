@@ -134,7 +134,7 @@ setTimeout(setupExecuteHandlers, 1000); // Delayed fallback
 
 ### Environment Variables Required
 - `OPENAI_API_KEY` - For AI responses
-- `GEMINI_API_KEY` - Fallback AI provider
+- `OPENROUTER_API_KEY` - Fallback AI provider
 - `GCP_SERVICE_ACCOUNT` - For MCP server access
 
 ### Custom Domain Setup

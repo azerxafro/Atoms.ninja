@@ -16,7 +16,7 @@ Vercel (atoms-ninja.vercel.app / atoms-dun.vercel.app)
       ├─ /api/kali ──────────────────────────────────────────► EC2 :3001  (Kali MCP)
       │                                                         sg-0047128872be65558
       │                                                         34.202.47.138
-      └─ /api/multi-ai ──────────────────────────────────────► Google Gemini API (external)
+      └─ /api/multi-ai ──────────────────────────────────────► Multi-AI Engine API (external)
 
 Admin (your IP)
       │

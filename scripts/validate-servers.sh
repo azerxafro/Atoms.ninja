@@ -29,7 +29,7 @@ check_endpoint() {
     fi
 }
 
-# Test local gemini-proxy
+# Test local atoms-server
 echo "📡 Testing Local Services"
 echo "-------------------------"
 if lsof -Pi :3001 -sTCP:LISTEN -t >/dev/null ; then
@@ -73,8 +73,8 @@ else
     echo -e "${RED}✗ SYNTAX ERROR${NC}"
 fi
 
-echo -n "Validating gemini-proxy.js... "
-if node -c gemini-proxy.js 2>/dev/null; then
+echo -n "Validating atoms-server.js... "
+if node -c atoms-server.js 2>/dev/null; then
     echo -e "${GREEN}✓ OK${NC}"
 else
     echo -e "${RED}✗ SYNTAX ERROR${NC}"

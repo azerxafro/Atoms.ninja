@@ -174,7 +174,7 @@ Terminal Output:
 
 ### Slow Response
 **Issue**: AI processing or network latency  
-**Fix**: Wait a few seconds, Gemini API may be processing
+**Fix**: Wait a few seconds, AI API may be processing
 
 ---
 

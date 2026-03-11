@@ -11,7 +11,7 @@
 |-----------|--------|--------------|
 | **Vercel Auth Protection** | ✅ DISABLED | Page loads successfully |
 | **Frontend Application** | ✅ LIVE | HTML/CSS/JS loading |
-| **Backend API (Gemini)** | ✅ WORKING | API responding with Gemini data |
+| **Backend API (Multi-AI)** | ✅ WORKING | API responding with AI data |
 | **DNS A Record** | ✅ CONFIGURED | 76.76.21.21 resolves |
 | **DNS Propagation** | ⏳ IN PROGRESS | SSL pending nameserver update |
 | **Kali MCP Server** | ✅ CONFIGURED | Pointing to 136.113.58.241:3001 |
@@ -23,7 +23,7 @@
 ### Production (Vercel) - **WORKING NOW**
 - **Main**: https://atoms-3kk8ssnc1-achuashwin98-4594s-projects.vercel.app
 - **Status**: ✅ Live and accessible
-- **API**: Working (tested with Gemini)
+- **API**: Working (tested with Multi-AI)
 
 ### Custom Domain - **DNS Propagating**
 - **Domain**: https://atoms.ninja
@@ -42,15 +42,15 @@
 ✅ All assets loading
 ```
 
-### 2. Backend API (Gemini)
+### 2. Backend API (Multi-AI)
 ```bash
-$ curl -X POST https://atoms-3kk8ssnc1-achuashwin98-4594s-projects.vercel.app/api/gemini \
+$ curl -X POST https://atoms-3kk8ssnc1-achuashwin98-4594s-projects.vercel.app/api/multi-ai \
   -H "Content-Type: application/json" \
   -d '{"prompt":"Hello"}'
 
 ✅ Response: {"candidates":[{"content":{"parts":[{"text":"Hello! How can I help you today?\n"}]...}
 
-✅ Gemini API Key: Working
+✅ AI API Key: Working
 ✅ CORS: Configured correctly
 ✅ Response time: Fast
 ```
@@ -97,7 +97,7 @@ The app is **fully functional** at this URL right now!
 
 ### Backend (.env) - ✅ Working
 ```env
-GEMINI_API_KEY=AIzaSyDzGlemhn-AEP5G8F0UrHuD6gWr97RV0YQ ✅
+OPENROUTER_API_KEY=AIzaSyDzGlemhn-AEP5G8F0UrHuD6gWr97RV0YQ ✅
 KALI_MCP_ENDPOINT=http://136.113.58.241:3001 ✅
 ALLOWED_ORIGINS=https://atoms.ninja,https://www.atoms.ninja ✅
 ```
@@ -116,8 +116,8 @@ KALI_MCP_ENDPOINT: 'https://atoms.ninja/api/kali'
 # Test homepage (WORKS NOW)
 curl https://atoms-3kk8ssnc1-achuashwin98-4594s-projects.vercel.app/
 
-# Test Gemini API (WORKS NOW)
-curl -X POST https://atoms-3kk8ssnc1-achuashwin98-4594s-projects.vercel.app/api/gemini \
+# Test AI API (WORKS NOW)
+curl -X POST https://atoms-3kk8ssnc1-achuashwin98-4594s-projects.vercel.app/api/multi-ai \
   -H "Content-Type: application/json" \
   -d '{"prompt":"Scan 192.168.1.1 for vulnerabilities"}'
 

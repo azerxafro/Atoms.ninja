@@ -9,7 +9,7 @@
    - All code committed and pushed
 
 2. **Vercel Environment Variables**: Configured
-   - ✅ GEMINI_API_KEY
+   - ✅ OPENROUTER_API_KEY
    - ✅ KALI_MCP_ENDPOINT (http://136.113.58.241:3001)
    - ✅ ALLOWED_ORIGINS (atoms.ninja configured)
 
@@ -62,7 +62,7 @@ After DNS changes, Vercel will auto-verify and issue SSL certificates.
 | Custom Domain | ⏳ Pending DNS | atoms.ninja |
 | SSL Certificate | ⏳ Pending | Generating |
 | Kali MCP Server | ✅ Configured | http://136.113.58.241:3001 |
-| Backend API | 🔒 Protected | /api/gemini, /api/kali, /api/health |
+| Backend API | 🔒 Protected | /api/multi-ai, /api/kali, /api/health |
 
 ## 🚀 Once Auth is Disabled
 
@@ -77,8 +77,8 @@ The app will be accessible at:
 # Test health endpoint
 curl https://atoms.ninja/api/health
 
-# Test Gemini API
-curl -X POST https://atoms.ninja/api/gemini \
+# Test AI API
+curl -X POST https://atoms.ninja/api/multi-ai \
   -H "Content-Type: application/json" \
   -d '{"prompt":"Test security scan"}'
 
@@ -96,7 +96,7 @@ KALI_MCP_ENDPOINT: 'https://atoms.ninja/api/kali'
 
 ### Backend Config (.env)
 ```env
-GEMINI_API_KEY=AIzaSyDzGlemhn-AEP5G8F0UrHuD6gWr97RV0YQ
+OPENROUTER_API_KEY=AIzaSyDzGlemhn-AEP5G8F0UrHuD6gWr97RV0YQ
 KALI_MCP_ENDPOINT=http://136.113.58.241:3001
 ALLOWED_ORIGINS=https://atoms.ninja,https://www.atoms.ninja
 ```

@@ -15,7 +15,7 @@
 ## 🎯 System Overview
 
 **Atoms.ninja** is a production-ready, AI-powered cybersecurity platform that provides:
-- Interactive AI security consultant powered by multiple AI providers (Google Gemini, OpenAI, Anthropic Claude, Groq)
+- Interactive AI security consultant powered by multiple AI providers (Multi-AI Engine, OpenAI, Anthropic Claude, Groq)
 - Access to 500+ Kali Linux penetration testing tools via MCP (Model Context Protocol) server
 - Natural language command interface for security operations
 - Real-time vulnerability scanning and analysis
@@ -50,7 +50,7 @@
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │  /api/index.js (Unified API Handler)                    │  │
 │  │  ├── /api/multi-ai    → AI Orchestration Layer          │  │
-│  │  ├── /api/gemini      → Google Gemini Proxy             │  │
+│  │  ├── /api/multi-ai      → Multi-AI Engine Proxy             │  │
 │  │  ├── /api/openai      → OpenAI GPT Proxy                │  │
 │  │  ├── /api/kali        → Kali MCP Proxy                  │  │
 │  │  ├── /api/ai-health   → Health Checks                   │  │
@@ -62,7 +62,7 @@
 ┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐
 │  AI PROVIDERS    │   │  GCP KALI VM     │   │ CVE DATABASES    │
 │                  │   │                  │   │                  │
-│ • Google Gemini  │   │ Kali MCP Server  │   │ • NVD            │
+│ • Multi-AI Engine  │   │ Kali MCP Server  │   │ • NVD            │
 │ • OpenAI GPT-4   │   │ 136.113.58.241   │   │ • MITRE          │
 │ • Anthropic      │   │ Port: 3001       │   │ • CVE Details    │
 │   Claude         │   │                  │   │                  │
@@ -102,7 +102,7 @@
 ### **AI/ML Services**
 | Provider | SDK | Purpose | Model |
 |----------|-----|---------|-------|
-| Google Gemini | @google/generative-ai 0.24.1 | Primary AI | gemini-2.0-flash |
+| Multi-AI Engine | openrouter/venice/bedrock | Primary AI | multi-model |
 | OpenAI | openai 6.8.1 | Fallback AI | gpt-4o-mini |
 | Anthropic | @anthropic-ai/sdk 0.68.0 | Advanced reasoning | claude-3-opus |
 | Groq | groq-sdk 0.34.0 | Fast inference | mixtral-8x7b |
@@ -145,7 +145,7 @@
   ```javascript
   // AI Integration
   callMultiAI(prompt)          // Calls multi-AI endpoint
-  callGemini(prompt)           // Direct Gemini call
+  callAI(prompt)           // Direct Multi-AI call
   
   // Command Processing
   processCommand(command)       // Main command handler
@@ -197,7 +197,7 @@ Main entry point for all Vercel serverless functions. Routes requests to special
 ```javascript
 GET  /api/health          → Health check
 POST /api/multi-ai        → AI orchestration (primary)
-POST /api/gemini          → Google Gemini proxy
+POST /api/multi-ai          → Multi-AI Engine proxy
 POST /api/openai          → OpenAI GPT proxy
 POST /api/kali            → Kali MCP proxy
 GET  /api/ai-health       → AI provider health checks
@@ -213,7 +213,7 @@ GET  /api/copilot         → GitHub Copilot integration
 ```
 Request → OpenAI (gpt-4o-mini)
           ↓ (if fails)
-       Gemini (gemini-2.0-flash)
+       Multi-AI (multi-model)
           ↓ (if fails)
        Claude (claude-3-opus)
           ↓ (if fails)
@@ -268,8 +268,8 @@ Return JSON for tool commands:
 - wireshark (packet analysis)
 - burp suite (web app testing)
 
-#### **/api/gemini.js** (Google Gemini Proxy)
-- Model: `gemini-2.0-flash`
+#### **/api/multi-ai.js** (Multi-AI Engine Proxy)
+- Model: `multi-model`
 - Temperature: 0.8
 - Max tokens: 300
 - API Key: Loaded from environment
@@ -340,7 +340,7 @@ GET  /health                  → Health check
 
 ### **4. Standalone Proxy Server**
 
-#### **gemini-proxy.js** (250 lines)
+#### **atoms-server.js** (250 lines)
 **Purpose**: Standalone backend for local/Docker deployment
 
 **Configuration**:
@@ -352,7 +352,7 @@ GET  /health                  → Health check
 **Usage**:
 ```bash
 # Local development
-node gemini-proxy.js
+node atoms-server.js
 
 # Docker
 docker build -t atoms-ninja-backend .
@@ -385,7 +385,7 @@ vercel --prod
 ```json
 {
   "openai": { "status": "ok", "latency": 120 },
-  "gemini": { "status": "ok", "latency": 95 },
+  "multi-ai": { "status": "ok", "latency": 95 },
   "claude": { "status": "degraded", "latency": 450 },
   "groq": { "status": "ok", "latency": 45 }
 }
@@ -424,8 +424,8 @@ vercel --prod
 }
 ```
 
-#### `POST /api/gemini`
-**Description**: Direct Google Gemini API call
+#### `POST /api/multi-ai`
+**Description**: Direct Multi-AI Engine API call
 **Request**:
 ```json
 {
@@ -526,7 +526,7 @@ npm i -g vercel
 vercel --prod
 
 # Set environment secrets
-vercel env add GEMINI_API_KEY
+vercel env add OPENROUTER_API_KEY
 vercel env add OPENAI_API_KEY
 ```
 
@@ -545,9 +545,9 @@ FROM node:18-alpine
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production
-COPY gemini-proxy.js ./
+COPY atoms-server.js ./
 EXPOSE 3001
-CMD ["node", "gemini-proxy.js"]
+CMD ["node", "atoms-server.js"]
 ```
 
 **Deployment**:
@@ -557,7 +557,7 @@ docker build -t atoms-ninja-backend .
 
 # Run container
 docker run -d -p 3001:3001 \
-  -e GEMINI_API_KEY=your_key \
+  -e OPENROUTER_API_KEY=your_key \
   --name atoms-backend \
   atoms-ninja-backend
 
@@ -616,9 +616,9 @@ services:
     name: atoms-ninja-backend
     env: node
     buildCommand: npm install
-    startCommand: node gemini-proxy.js
+    startCommand: node atoms-server.js
     envVars:
-      - key: GEMINI_API_KEY
+      - key: OPENROUTER_API_KEY
         sync: false
 ```
 
@@ -629,7 +629,7 @@ services:
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "node gemini-proxy.js"
+startCommand = "node atoms-server.js"
 healthcheckPath = "/health"
 ```
 
@@ -651,8 +651,8 @@ app = "atoms-ninja"
 
 **Required**:
 ```env
-# Google Gemini API Key
-GEMINI_API_KEY=AIza...your_key_here
+# Multi-AI Engine API Key
+OPENROUTER_API_KEY=AIza...your_key_here
 
 # Optional: Additional AI providers
 OPENAI_API_KEY=sk-...
@@ -702,8 +702,8 @@ LOG_LEVEL=info
 
 ### **API Key Security**
 
-**Getting Gemini API Key**:
-1. Visit: https://aistudio.google.com/app/apikey
+**Getting AI API Key**:
+1. Visit: https://openrouter.ai/keys
 2. Sign in with Google account
 3. Click "Create API Key"
 4. Select/create Google Cloud project
@@ -793,8 +793,8 @@ npm run demo
 
 ```json
 {
-  "start": "node gemini-proxy.js",
-  "dev": "nodemon gemini-proxy.js",
+  "start": "node atoms-server.js",
+  "dev": "nodemon atoms-server.js",
   "test": "node test.js",
   "test:full": "node test-api-and-mcp.js",
   "test:api": "node test-api-and-mcp.js",
@@ -810,7 +810,7 @@ Atoms.ninja/
 ├── api/                    # Serverless API functions
 │   ├── index.js           # Main API handler
 │   ├── multi-ai.js        # AI orchestration
-│   ├── gemini.js          # Gemini proxy
+│   ├── multi-ai.js          # AI proxy
 │   ├── openai.js          # OpenAI proxy
 │   ├── kali.js            # Kali MCP proxy
 │   ├── cve-lookup.js      # CVE database
@@ -825,7 +825,7 @@ Atoms.ninja/
 │   └── config.js         # Configuration
 │
 ├── config.js              # Central configuration
-├── gemini-proxy.js        # Standalone backend
+├── atoms-server.js        # Standalone backend
 ├── kali-mcp-server.js     # Kali MCP server
 ├── package.json           # Dependencies
 ├── Dockerfile             # Docker config
@@ -883,7 +883,7 @@ vercel --prod
 ### **Costs** (Estimated Monthly)
 - **Vercel Hosting**: $0-20 (free tier available)
 - **GCP Compute**: $25-50 (e2-standard-2)
-- **Gemini API**: $0.00025/request (~$2.50 for 10K requests)
+- **AI API**: $0.00025/request (~$2.50 for 10K requests)
 - **OpenAI API**: $0.0001/request (~$1 for 10K requests)
 - **Total**: ~$30-75/month for 10,000 users
 
@@ -891,7 +891,7 @@ vercel --prod
 
 ## 🎓 Learning Resources
 
-- [Google Gemini API Docs](https://ai.google.dev/docs)
+- [Multi-AI Engine API Docs](https://openrouter.ai/docs)
 - [OpenAI API Reference](https://platform.openai.com/docs)
 - [Vercel Serverless Functions](https://vercel.com/docs/functions)
 - [Kali Linux Tools](https://www.kali.org/tools/)
@@ -914,7 +914,7 @@ lsof -i :3001
 cat .env
 
 # Start with debug logs
-DEBUG=* node gemini-proxy.js
+DEBUG=* node atoms-server.js
 ```
 
 ### **Frontend can't connect to backend**

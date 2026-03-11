@@ -29,7 +29,7 @@ Provide a unified AI-powered interface to 500+ Kali Linux security tools for aut
 - **Reverse Engineering**: gdb, radare2, ghidra, objdump
 
 ### 3. AI Intelligence Layer
-- **Unified AI Architect**: Powered by Google Gemini 2.0 Flash
+- **Unified AI Architect**: Powered by Multi-AI Engine
 - **Auto-execution**: AI interprets intent and executes appropriate tools
 - **Thinking Chain**: Transparent AI reasoning process displayed to users
 - **Multi-mode Operation**: Fast mode for quick responses, detailed mode for complex analysis
@@ -70,4 +70,4 @@ Provide a unified AI-powered interface to 500+ Kali Linux security tools for aut
 - **Frontend**: Vercel-hosted terminal interface (atoms.ninja)
 - **Backend**: Express.js orchestration layer with AI integration
 - **Execution Layer**: GCP Kali Linux VM with full tool arsenal
-- **AI Provider**: Google Gemini API for natural language processing
+- **AI Provider**: Multi-AI Engine API for natural language processing

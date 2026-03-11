@@ -58,10 +58,10 @@
 
 #### Code Review Notes Addressed
 The code review identified existing hardcoded API keys in OTHER files (not part of this PR):
-- `gemini-proxy.js:13` - Pre-existing
+- `atoms-server.js:13` - Pre-existing
 - `config.js:24` - Pre-existing  
-- `api/gemini.js:4` - Pre-existing
-- `api/ai-providers/gemini.js:4` - Pre-existing
+- `api/multi-ai.js:4` - Pre-existing
+- `api/ai-providers/multi-ai.js:4` - Pre-existing
 
 **These are NOT part of this feature implementation and were not modified.**
 

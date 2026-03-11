@@ -41,7 +41,7 @@ async function demonstrateSystemCapabilities() {
     // 1. API Key Configuration
     section('1️⃣  API Key Configuration');
     
-    let apiKey = process.env.GEMINI_API_KEY;
+    let apiKey = process.env.OPENROUTER_API_KEY;
     
     // If not in env, check config.js
     if (!apiKey) {
@@ -49,7 +49,7 @@ async function demonstrateSystemCapabilities() {
             const fs = require('fs');
             if (fs.existsSync('config.js')) {
                 const configContent = fs.readFileSync('config.js', 'utf8');
-                const match = configContent.match(/GEMINI_API_KEY:\s*['"]([^'"]+)['"]/);
+                const match = configContent.match(/OPENROUTER_API_KEY:\s*['"]([^'"]+)['"]/);
                 if (match) {
                     apiKey = match[1];
                 }
@@ -98,9 +98,9 @@ async function demonstrateSystemCapabilities() {
     log(`\n   Example Task: User asks "scan example.com"`, 'yellow');
     log(`   ┌─────────────────────────────────────────────────┐`, 'cyan');
     log(`   │ Step 1: User enters command in frontend         │`, 'cyan');
-    log(`   │ Step 2: Frontend sends to backend /api/gemini   │`, 'cyan');
+    log(`   │ Step 2: Frontend sends to backend /api/multi-ai  │`, 'cyan');
     log(`   │ Step 3: Backend authenticates with API key      │`, 'cyan');
-    log(`   │ Step 4: Gemini AI processes the request         │`, 'cyan');
+    log(`   │ Step 4: AI provider processes the request        │`, 'cyan');
     log(`   │ Step 5: AI determines appropriate action        │`, 'cyan');
     log(`   │ Step 6: If tool needed, calls MCP server        │`, 'cyan');
     log(`   │ Step 7: MCP executes command (e.g., nmap)       │`, 'cyan');

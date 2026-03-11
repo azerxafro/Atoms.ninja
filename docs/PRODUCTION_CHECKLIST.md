@@ -11,11 +11,11 @@
   - Auto-execution of 30+ security tools
   - Real-time results display
 
-### Backend (Gemini Proxy)
+### Backend (OpenRouter multi-modelxy)
 - **URL**: https://atoms-dun.vercel.app
 - **Status**: ✅ Deployed  
 - **Features**:
-  - Gemini API integration
+  - AI API integration
   - Kali MCP proxy with timeout handling
   - CORS configured for all origins
   - 4-minute timeout for long-running tools

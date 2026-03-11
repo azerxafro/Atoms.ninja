@@ -72,7 +72,7 @@ Press **F12** in your browser, then check:
 
 ### Network Tab
 Look for failed requests to:
-- `/api/gemini` 
+- `/api/multi-ai` 
 - `/api/kali/*`
 
 ### Console Tab

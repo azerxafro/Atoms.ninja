@@ -407,9 +407,9 @@ window.addEventListener("load", () => {
 const settingsModal = document.getElementById("settingsModal");
 const settingsBtn = document.getElementById("settingsBtn");
 const closeModal = document.getElementById("closeModal");
-const saveGeminiKey = document.getElementById("saveGeminiKey");
+const saveAiKey = document.getElementById("saveAiKey");
 const testMCPConnection = document.getElementById("testMCPConnection");
-const geminiApiKeyInput = document.getElementById("geminiApiKey");
+const aiApiKeyInput = document.getElementById("aiApiKey");
 const mcpEndpointInput = document.getElementById("mcpEndpoint");
 const devModeToggle = document.getElementById("devModeToggle");
 

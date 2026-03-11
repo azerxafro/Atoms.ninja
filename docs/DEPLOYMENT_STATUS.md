@@ -37,7 +37,7 @@ The deployment has **Vercel Authentication** enabled, blocking public access.
 
 ## 🔧 Environment Variables (Configured)
 
-✅ **GEMINI_API_KEY**: Set (Production)
+✅ **OPENROUTER_API_KEY**: Set (Production)
 ✅ **ALLOWED_ORIGINS**: https://atoms.ninja,https://www.atoms.ninja,http://localhost:8000
 ✅ **KALI_MCP_ENDPOINT**: http://136.113.58.241:3001
 ✅ **NODE_ENV**: production
@@ -84,8 +84,8 @@ The deployment has **Vercel Authentication** enabled, blocking public access.
 # Test API health (after disabling auth)
 curl https://atoms-o87gtb4p7-achuashwin98-4594s-projects.vercel.app/api/health
 
-# Test Gemini endpoint
-curl -X POST https://atoms.ninja/api/gemini \
+# Test AI endpoint
+curl -X POST https://atoms.ninja/api/multi-ai \
   -H "Content-Type: application/json" \
   -d '{"prompt":"Hello"}'
 

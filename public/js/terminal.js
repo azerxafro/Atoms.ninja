@@ -780,7 +780,7 @@ async function executeScan(command) {
   }
 }
 
-// Process with AI (Google Gemini) - Atom Personality
+// Process with AI (Multi-Provider) - Atom Personality
 async function processWithAI(command) {
   try {
     // Detect if this is a task request using shared config

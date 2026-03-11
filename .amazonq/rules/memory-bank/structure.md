@@ -82,7 +82,7 @@ atoms.ninja/
 User Input → Frontend (index.html)
           → API Proxy (/api/index.js)
           → Backend (atoms-server.js)
-          → AI Analysis (Gemini/OpenRouter)
+          → AI Analysis (Multi-AI/OpenRouter)
           → Tool Execution (Kali VM)
           → Response Chain
 ```

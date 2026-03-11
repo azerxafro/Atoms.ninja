@@ -57,11 +57,11 @@
 - **Endpoint**: OpenRouter API
 - **Authentication**: API key via environment variable
 
-### Google Gemini
-- **Model**: Gemini 2.0 Flash
+### Multi-AI Engine
+- **Model**: OpenRouter multi-model
 - **Usage**: Natural language processing
 - **Integration**: Direct API calls
-- **Authentication**: GEMINI_API_KEY
+- **Authentication**: OPENROUTER_API_KEY
 
 ## Infrastructure
 
@@ -147,7 +147,7 @@ bash scripts/install-kali-tools.sh # Install security tools
 
 ### Environment Variables Required
 ```
-GEMINI_API_KEY          # Google Gemini API key
+OPENROUTER_API_KEY          # Multi-AI Engine API key
 OPENROUTER_API_KEY      # OpenRouter API key
 VENICE_API_KEY          # Venice AI API key
 KALI_MCP_ENDPOINT       # Kali MCP server endpoint

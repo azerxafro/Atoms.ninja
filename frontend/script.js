@@ -149,7 +149,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // Configuration
 const CONFIG = {
-  GEMINI_API_KEY: "", // Not needed - using backend proxy
+  AI_API_KEY: "", // Not needed - using backend proxy
   BACKEND_API_URL:
     window.location.protocol === "file:" ||
     window.location.hostname === "localhost" ||
@@ -705,7 +705,7 @@ async function simulateScan(command) {
   }
 }
 
-// Process with AI (Google Gemini) - Using Backend Proxy with Auto-Execute
+// Process with AI (Multi-Provider) - Using Backend Proxy with Auto-Execute
 async function processWithAI(command) {
   try {
     addTerminalLine("🤖 AI Security Architect is analyzing...", "info");
@@ -836,15 +836,13 @@ tcpdump, wireshark, aircrack-ng, wfuzz, ffuf, dirsearch
     Now analyze the user's request and respond accordingly.`;
 
     // Call backend proxy
-    const response = await fetch(`${CONFIG.BACKEND_API_URL}/api/gemini`, {
+    const response = await fetch(`${CONFIG.BACKEND_API_URL}/api/multi-ai`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        prompt: prompt,
-        temperature: 0.6, // Reduced for more precise tool selection
-        maxTokens: 800, // Increased for complex natural language understanding
+        message: prompt,
       }),
     });
 
@@ -867,11 +865,54 @@ tcpdump, wireshark, aircrack-ng, wfuzz, ffuf, dirsearch
 
     const data = await response.json();
 
-    if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
-      throw new Error("Invalid response format from AI");
+    // Handle auto-executed commands (backend already ran the tool)
+    if (data.autoExecute && data.toolOutput) {
+      addTerminalLine(
+        `💡 ${data.autoExecute.explanation || "Executing command"}`,
+        "info",
+      );
+      addTerminalLine(`⚡ Auto-executed: ${data.autoExecute.command}`, "info");
+
+      const output = data.toolOutput.result || data.toolOutput.stderr || "No output";
+      saveChatInteraction(
+        command,
+        data.autoExecute.explanation,
+        data.autoExecute.command,
+        output,
+      );
+
+      return {
+        message: output,
+        type: data.toolOutput.exitCode === 0 ? "success" : "warning",
+      };
     }
 
-    const aiResponse = data.candidates[0].content.parts[0].text.trim();
+    // Handle commands the backend parsed but didn't execute (no EC2)
+    if (data.autoExecute && data.autoExecute.command) {
+      addTerminalLine(
+        `💡 ${data.autoExecute.explanation || "Executing command"}`,
+        "info",
+      );
+      addTerminalLine(`⚡ Auto-executing: ${data.autoExecute.command}`, "info");
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const result = await processCommand(data.autoExecute.command);
+
+      saveChatInteraction(
+        command,
+        data.autoExecute.explanation,
+        data.autoExecute.command,
+        result.message,
+      );
+
+      return result;
+    }
+
+    // Extract AI text response
+    const aiResponse = data.response || data.content || "";
+    if (!aiResponse) {
+      throw new Error("Empty response from AI");
+    }
 
     // Check if AI wants to execute a command (JSON response)
     if (aiResponse.startsWith("{") && aiResponse.includes('"action"')) {
@@ -1138,18 +1179,18 @@ console.log(
   "font-size: 14px; color: #EF4444; font-weight: bold;",
 );
 console.log(
-  "%cPowered by Kali Linux MCP & Google Gemini AI",
+  "%cPowered by Kali Linux MCP & Multi-AI Engine",
   "font-size: 12px; color: #8B5CF6;",
 );
 
 // API Configuration Helper
-window.setGeminiAPIKey = function (apiKey) {
-  CONFIG.GEMINI_API_KEY = apiKey;
+window.setAIAPIKey = function (apiKey) {
+  CONFIG.AI_API_KEY = apiKey;
   console.log(
-    "%c✓ Gemini API Key configured successfully!",
+    "%c✓ AI API Key configured successfully!",
     "color: #10B981; font-weight: bold;",
   );
-  addTerminalLine("Google Gemini AI authentication successful.", "success");
+  addTerminalLine("AI provider authentication successful.", "success");
 };
 
 // Clear chat history helper
@@ -1362,7 +1403,7 @@ window.addEventListener("load", () => {
   console.log("%c  • clearChatHistory() - Clear memory", "color: #8B5CF6;");
 
   console.log(
-    '%cTo enable AI features, run: setGeminiAPIKey("your-api-key-here")',
+    '%cTo enable AI features, run: setAIAPIKey("your-api-key-here")',
     "color: #8B5CF6; font-style: italic;",
   );
 });
@@ -1371,17 +1412,17 @@ window.addEventListener("load", () => {
 const settingsModal = document.getElementById("settingsModal");
 const settingsBtn = document.getElementById("settingsBtn");
 const closeModal = document.getElementById("closeModal");
-const saveGeminiKey = document.getElementById("saveGeminiKey");
+const saveAiKey = document.getElementById("saveAiKey");
 const testMCPConnection = document.getElementById("testMCPConnection");
-const geminiApiKeyInput = document.getElementById("geminiApiKey");
+const aiApiKeyInput = document.getElementById("aiApiKey");
 const mcpEndpointInput = document.getElementById("mcpEndpoint");
 
 // Open settings modal
 settingsBtn.addEventListener("click", () => {
   settingsModal.classList.add("active");
   // Load saved values
-  if (CONFIG.GEMINI_API_KEY) {
-    geminiApiKeyInput.value = CONFIG.GEMINI_API_KEY;
+  if (CONFIG.AI_API_KEY) {
+    aiApiKeyInput.value = CONFIG.AI_API_KEY;
   }
 });
 
@@ -1397,9 +1438,9 @@ settingsModal.addEventListener("click", (e) => {
   }
 });
 
-// Save Gemini API Key
-saveGeminiKey.addEventListener("click", () => {
-  const apiKey = geminiApiKeyInput.value.trim();
+// Save AI API Key
+saveAiKey.addEventListener("click", () => {
+  const apiKey = aiApiKeyInput.value.trim();
   const statusDiv = document.getElementById("apiKeyStatus");
 
   if (!apiKey) {
@@ -1408,19 +1449,19 @@ saveGeminiKey.addEventListener("click", () => {
     return;
   }
 
-  CONFIG.GEMINI_API_KEY = apiKey;
+  CONFIG.AI_API_KEY = apiKey;
   if (typeof AtomsNinjaConfig !== "undefined") {
-    AtomsNinjaConfig.gemini.apiKey = apiKey;
+    AtomsNinjaConfig.ai.apiKey = apiKey;
   }
 
   // Save to localStorage
-  localStorage.setItem("gemini_api_key", apiKey);
+  localStorage.setItem("ai_api_key", apiKey);
 
   statusDiv.className = "status-message success";
   statusDiv.textContent =
     "✅ API key saved successfully! AI features are now enabled.";
 
-  addTerminalLine("Google Gemini AI configured and ready.", "success");
+  addTerminalLine("AI provider configured and ready.", "success");
 
   setTimeout(() => {
     statusDiv.style.display = "none";
@@ -1463,15 +1504,15 @@ testMCPConnection.addEventListener("click", async () => {
 
 // Load saved configuration on startup
 window.addEventListener("load", () => {
-  const savedApiKey = localStorage.getItem("gemini_api_key");
+  const savedApiKey = localStorage.getItem("ai_api_key");
   const savedEndpoint = localStorage.getItem("mcp_endpoint");
 
   if (savedApiKey) {
-    CONFIG.GEMINI_API_KEY = savedApiKey;
+    CONFIG.AI_API_KEY = savedApiKey;
     if (typeof AtomsNinjaConfig !== "undefined") {
-      AtomsNinjaConfig.gemini.apiKey = savedApiKey;
+      AtomsNinjaConfig.ai.apiKey = savedApiKey;
     }
-    addTerminalLine("Loaded saved Google Gemini API configuration.", "info");
+    addTerminalLine("Loaded saved AI API configuration.", "info");
   }
 
   if (savedEndpoint) {

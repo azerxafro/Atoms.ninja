@@ -94,14 +94,14 @@ npm i -g vercel
   "version": 2,
   "builds": [
     {
-      "src": "gemini-proxy.js",
+      "src": "atoms-server.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "gemini-proxy.js"
+      "dest": "atoms-server.js"
     }
   ],
   "env": {
@@ -190,7 +190,7 @@ netlify deploy --prod --dir=.
 
 **Test backend locally:**
 ```bash
-curl -X POST http://localhost:3001/api/gemini \
+curl -X POST http://localhost:3001/api/multi-ai \
   -H "Content-Type: application/json" \
   -d '{"prompt":"What is penetration testing?"}'
 ```
@@ -229,7 +229,7 @@ curl http://localhost:3001/health
 ## 💰 Cost Estimation
 
 With your service account:
-- Gemini Pro API: ~$0.00025 per request
+- OpenRouter multi-model API: ~$0.00025 per request
 - Backend hosting: $0-$20/month (depending on platform)
 - Global CDN: Free on most platforms
 

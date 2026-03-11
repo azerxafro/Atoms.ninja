@@ -31,7 +31,7 @@ Follow the operational hierarchy and roles defined by the **Chief (The Kingmaker
 | **King Soldier** | —         | Claude Sonnet 4.6 | Master Executor, Warriors Commander            |
 | **ATLAS**        | NEXUS     | Claude Sonnet 4.6 | Elite Coder: all languages and frameworks      |
 | **ORION**        | SENTINEL  | Claude Sonnet 4.6 | Elite Debugger: bugs, CVE, performance         |
-| **TITAN**        | GUARDIAN  | Gemini 3.1 Pro    | Elite QA: testing, security validation         |
+| **TITAN**        | GUARDIAN  | Multi-AI 3.1 Pro    | Elite QA: testing, security validation         |
 
 ### Implementation Philosophy
 

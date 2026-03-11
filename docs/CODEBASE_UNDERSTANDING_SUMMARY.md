@@ -10,7 +10,7 @@ This document provides a comprehensive understanding of the Atoms.ninja codebase
 
 **Atoms.ninja** is an AI-powered cybersecurity platform that provides:
 
-1. **AI Security Consultant** - Interactive assistant powered by multiple AI providers (Google Gemini, OpenAI, Anthropic Claude, Groq)
+1. **AI Security Consultant** - Interactive assistant powered by multiple AI providers (Multi-AI Engine, OpenAI, Anthropic Claude, Groq)
 2. **Kali Linux Tools Integration** - Access to 500+ penetration testing tools via a cloud-based MCP (Model Context Protocol) server
 3. **Natural Language Interface** - Convert plain English queries into security tool commands
 4. **Real-time Security Operations** - Execute scans, analyze vulnerabilities, and generate reports
@@ -42,7 +42,7 @@ This document provides a comprehensive understanding of the Atoms.ninja codebase
                          ↓ External Services
 ┌─────────────────────────────────────────────────────────┐
 │  TIER 3: SERVICES (External)                            │
-│  • AI Providers (Gemini, OpenAI, Claude, Groq)         │
+│  • AI Providers (Multi-AI, OpenAI, Claude, Groq)         │
 │  • AWS EC2 Kali Instance (<EC2_IP>)                    │
 │  • CVE Databases (NVD, MITRE)                          │
 └─────────────────────────────────────────────────────────┘
@@ -62,7 +62,7 @@ This document provides a comprehensive understanding of the Atoms.ninja codebase
 ### **Key Dependencies**
 ```json
 {
-  "@google/generative-ai": "0.24.1",    // Google Gemini
+  "@google/generative-ai": "0.24.1",    // AI Engine (legacy)
   "openai": "6.8.1",                     // OpenAI GPT
   "@anthropic-ai/sdk": "0.68.0",         // Claude
   "groq-sdk": "0.34.0",                  // Groq
@@ -116,8 +116,8 @@ This document provides a comprehensive understanding of the Atoms.ninja codebase
 
 | Endpoint | Purpose | Model/Service |
 |----------|---------|---------------|
-| `/api/multi-ai` | Primary AI interface | OpenAI → Gemini → Claude → Groq |
-| `/api/gemini` | Google Gemini direct | gemini-2.0-flash |
+| `/api/multi-ai` | Primary AI interface | OpenAI → Multi-AI → Claude → Groq |
+| `/api/multi-ai` | Multi-AI Engine direct | multi-model |
 | `/api/openai` | OpenAI direct | gpt-4o-mini |
 | `/api/kali` | Kali MCP proxy | AWS EC2 <EC2_IP> |
 | `/api/cve-lookup` | Vulnerability database | NVD, MITRE |
@@ -155,14 +155,14 @@ This document provides a comprehensive understanding of the Atoms.ninja codebase
 
 ### **4. Standalone Backend**
 
-**File**: `gemini-proxy.js` (250 lines)
+**File**: `atoms-server.js` (250 lines)
 **Purpose**: Alternative deployment for local/Docker environments
 **Features**:
 - Standalone Express.js server
 - Port 3001 (configurable)
 - CORS configuration
 - Health check endpoint
-- Google Gemini API proxy
+- Multi-AI Engine API proxy
 
 ---
 
@@ -260,9 +260,9 @@ FROM node:18-alpine
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production
-COPY gemini-proxy.js ./
+COPY atoms-server.js ./
 EXPOSE 3001
-CMD ["node", "gemini-proxy.js"]
+CMD ["node", "atoms-server.js"]
 ```
 
 ### **Kali MCP: AWS EC2**
@@ -317,7 +317,7 @@ CMD ["node", "gemini-proxy.js"]
 ### **Environment Variables**
 ```env
 # Required
-GEMINI_API_KEY=AIza...                  # From: aistudio.google.com
+OPENROUTER_API_KEY=AIza...                  # From: openrouter.ai
 
 # Optional
 OPENAI_API_KEY=sk-...
@@ -461,8 +461,8 @@ python3 -m http.server 8000  # Port 8000
 ### **NPM Scripts**
 ```json
 {
-  "start": "node gemini-proxy.js",          // Start backend
-  "dev": "nodemon gemini-proxy.js",         // Dev mode
+  "start": "node atoms-server.js",          // Start backend
+  "dev": "nodemon atoms-server.js",         // Dev mode
   "test": "node test.js",                   // Basic tests
   "test:full": "node test-api-and-mcp.js",  // Integration tests
   "test:api": "node test-api-and-mcp.js",   // API tests
@@ -528,7 +528,7 @@ This understanding task has created three comprehensive documentation files:
 
 ## 🎓 Learning Resources
 
-- **Google Gemini API**: https://ai.google.dev/docs
+- **Multi-AI Engine API**: https://openrouter.ai/docs
 - **OpenAI API**: https://platform.openai.com/docs
 - **Vercel Serverless**: https://vercel.com/docs/functions
 - **Kali Linux Tools**: https://www.kali.org/tools/

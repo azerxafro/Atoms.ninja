@@ -51,7 +51,7 @@ npm run test:api
 This tests:
 - API Key presence and format
 - Backend health check
-- Gemini API proxy functionality
+- AI API proxy functionality
 - MCP Server health
 - Command execution capability
 - User task processing
@@ -67,13 +67,13 @@ npm start
 # In another terminal, test health endpoint
 curl http://localhost:3001/health
 
-# Expected: {"status":"ok","service":"Atoms Ninja Gemini Proxy"}
+# Expected: {"status":"ok","service":"Atoms Ninja OpenRouter multi-modelxy"}
 ```
 
-#### Test Gemini API Endpoint
+#### Test AI API Endpoint
 
 ```bash
-curl -X POST http://localhost:3001/api/gemini \
+curl -X POST http://localhost:3001/api/multi-ai \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "Say hello",
@@ -103,17 +103,17 @@ The API key is configured in multiple places for redundancy:
 
 1. **`.env.example`** (template)
    ```env
-   GEMINI_API_KEY=your-api-key-here
+   OPENROUTER_API_KEY=your-api-key-here
    ```
 
 2. **`config.js`** (default key)
    ```javascript
-   GEMINI_API_KEY: 'd654e256baead3eaad49d56fded4718c3b4be7a9'
+   OPENROUTER_API_KEY: 'd654e256baead3eaad49d56fded4718c3b4be7a9'
    ```
 
 3. **Environment Variables** (runtime)
    ```bash
-   export GEMINI_API_KEY=your-api-key-here
+   export OPENROUTER_API_KEY=your-api-key-here
    ```
 
 ### MCP Server Configuration
@@ -151,10 +151,10 @@ KALI_MCP_ENDPOINT: 'https://www.atoms.ninja/api/kali'
 2. Or ensure backend proxy is configured correctly
 3. Check MCP endpoint in config.js
 
-### Issue: "Gemini API returns error"
+### Issue: "AI API returns error"
 
 **Solution:**
-1. Verify API key is valid: Visit https://aistudio.google.com/app/apikey
+1. Verify API key is valid: Visit https://openrouter.ai/keys
 2. Check API quota and billing
 3. Ensure network connectivity to Google APIs
 4. Try updating to a newer API key
@@ -191,7 +191,7 @@ Before deploying, ensure:
 - [x] ✅ API key is configured and valid
 - [x] ✅ Backend server starts without errors
 - [x] ✅ Health endpoint returns 200 OK
-- [x] ✅ Gemini API proxy works correctly
+- [x] ✅ AI API proxy works correctly
 - [x] ✅ MCP server is accessible
 - [x] ✅ User commands can be processed
 - [x] ✅ All dependencies installed

@@ -7,7 +7,7 @@
 [![Status](https://img.shields.io/badge/Status-Production--Ready-brightgreen?style=for-the-badge)]()
 [![Authority](https://img.shields.io/badge/Authority-Tamil_Nadu_Government-blue?style=for-the-badge)]()
 [![License](https://img.shields.io/badge/License-Enterprise-red?style=for-the-badge)]()
-[![AI](https://img.shields.io/badge/AI-Unified_Gemini_Flash-orange?style=for-the-badge)]()
+[![AI](https://img.shields.io/badge/AI-Unified_AI_Engine-orange?style=for-the-badge)]()
 
 ---
 
@@ -59,7 +59,7 @@ Integrated directly via a high-performance **Kali Linux MCP Server**, Atoms Ninj
 
 ## 🧠 Unified AI Intelligence
 
-Atoms Ninja features a **Unified AI Architect** (Powered by Google Gemini 2.0 Flash) that acts as a force multiplier for security professionals:
+Atoms Ninja features a **Unified AI Architect** (Powered by Multi-AI Engine) that acts as a force multiplier for security professionals:
 
 - **Natural Language to Command**: Convert plain English intent into precise, executable Kali commands.
 - **Automated Threat Analysis**: Real-time interpretation of scan results and vulnerability logs.
@@ -75,7 +75,7 @@ The platform is built on a high-availability, secure three-tier architecture:
 ```mermaid
 graph TD
     A["Terminal Interface - Vercel"] -->|Secure API| B["Orchestration Layer - Vercel Proxy"]
-    B -->|AI Analysis| C[Google Gemini API]
+    B -->|AI Analysis| C[Multi-AI Engine API]
     B -->|Tool Execution| D[AWS EC2 Kali Instance]
     D -->|500+ Tools| E[Target Infrastructure]
 ```
@@ -104,7 +104,7 @@ graph TD
 3.  **Configure Environment**:
     Create a `.env` file with your API keys:
     ```env
-    GEMINI_API_KEY=your_key_here
+    OPENROUTER_API_KEY=your_key_here
     KALI_MCP_ENDPOINT=http://your-vm-ip:3001
     ```
 4.  **Launch Arsenal**:
