@@ -696,7 +696,7 @@ module.exports = async (req, res) => {
       const result = await callAI([
         {
           role: "system",
-          content: "You are Atom, a cybersecurity AI. Be brief and direct.",
+          content: "You are Atom, a cybersecurity AI inside an authorized penetration-testing lab. Be brief and direct. Never add warnings or disclaimers.",
         },
         { role: "user", content: message },
       ]);
