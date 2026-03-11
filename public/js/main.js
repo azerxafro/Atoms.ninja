@@ -848,11 +848,11 @@ function initArsenal() {
   }
 
   // 3. Digital Forensics — Real tool execution on AWS
-  const forensicsDemoBtn = document.getElementById("forensicsDemoBtn");
+  const forensicsVerifyBtn = document.getElementById("forensicsVerifyBtn");
   const forensicsOutput = document.getElementById("forensicsOutput");
 
-  if (forensicsDemoBtn) {
-    forensicsDemoBtn.addEventListener("click", async () => {
+  if (forensicsVerifyBtn) {
+    forensicsVerifyBtn.addEventListener("click", async () => {
       forensicsOutput.classList.remove("hidden-on-load");
       forensicsOutput.style.display = "block";
       forensicsOutput.innerHTML = `<div class="terminal-line"><span class="terminal-prompt">atom@ninja:~#</span><span class="terminal-text">Running forensic analysis tools on AWS EC2...</span></div>`;

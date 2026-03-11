@@ -304,7 +304,7 @@ button {
   animation: slideLeft 0.8s ease-out;
 }
 
-.demo-card {
+.arsenal-card {
   background: var(--color-bg);
   border-radius: 24px;
   overflow: hidden;
@@ -319,7 +319,7 @@ button {
   box-shadow: var(--shadow-neu-out-hover);
 }
 
-.demo-header {
+.arsenal-header {
   padding: 18px 24px;
   background: transparent;
   display: flex;
@@ -329,7 +329,7 @@ button {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.demo-dots {
+.arsenal-dots {
   display: flex;
   gap: 8px;
 }
@@ -351,7 +351,7 @@ button {
   background: #27c93f;
 }
 
-.demo-title {
+.arsenal-title {
   font-size: 13px;
   color: var(--color-text-secondary);
   font-weight: 500;
@@ -359,7 +359,7 @@ button {
   font-family: var(--font-mono);
 }
 
-.demo-content {
+.arsenal-content {
   padding: 24px;
 }
 
@@ -823,7 +823,7 @@ button {
     gap: 24px;
   }
 
-  .demo-content {
+  .arsenal-content {
     padding: 16px;
   }
 
@@ -1891,7 +1891,7 @@ html {
   margin: 0;
 }
 
-.chat-main .demo-card {
+.chat-main .arsenal-card {
   margin-bottom: 16px;
 }
 
@@ -2013,7 +2013,7 @@ html {
   animation: fadeIn 0.3s ease;
 }
 
-.arsenal-tab .demo-card {
+.arsenal-tab .arsenal-card {
   margin: 0;
   flex-grow: 1;
   display: flex;
