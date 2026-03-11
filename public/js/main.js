@@ -712,17 +712,21 @@ function initArsenal() {
 
   sidebarItems.forEach((item) => {
     item.addEventListener("click", () => {
-      // Remove active from all
+      // Hide all tabs and remove active state
       sidebarItems.forEach((i) => i.classList.remove("active"));
-      arsenalTabs.forEach((t) => (t.style.display = "none"));
-      arsenalTabs.forEach((t) => t.classList.remove("active"));
+      arsenalTabs.forEach((t) => {
+        t.classList.add("hidden-on-load");
+        t.classList.remove("active");
+        t.style.display = "";
+      });
 
-      // Set active
+      // Show the selected tab
       item.classList.add("active");
       const tabId = item.getAttribute("data-tab");
       const targetTab = document.getElementById(tabId);
       if (targetTab) {
-        targetTab.style.display = "block";
+        targetTab.classList.remove("hidden-on-load");
+        targetTab.style.display = "flex";
         targetTab.classList.add("active");
 
         // Tab specific setups
