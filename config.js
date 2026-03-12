@@ -4,6 +4,13 @@ const CONFIG = {
   BACKEND_API_URL:
     (typeof window !== "undefined" ? window.location.origin : "") + "/api",
 
+  // Multi-AI endpoint — used by processWithAI() in terminal.js
+  AI_ENDPOINT:
+    (typeof window !== "undefined" ? window.location.origin : "") + "/api/multi-ai",
+
+  // Default AI mode: "fast" (single model) or "accurate" (multi-AI consensus)
+  AI_MODE: "fast",
+
   // Kali Linux MCP Server — uses the current origin proxy
   KALI_MCP_ENDPOINT:
     (typeof window !== "undefined" ? window.location.origin : "") + "/api/kali",

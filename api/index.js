@@ -607,7 +607,7 @@ module.exports = async (req, res) => {
     if (path === "/api/multi-ai") {
       // IP resolution validation for domain queries
       const { message } = req.body || {};
-      if (message && (message.includes("find ip") || message.includes("get ip") || message.includes("resolve"))) {
+      if (message && (message.includes("find ip") || message.includes("get ip") || message.includes("resolve") || message.includes("bypass"))) {
         const domainMatch = message.match(/(?:of|for)\s+([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
         if (domainMatch) {
           const domain = extractDomain(domainMatch[1]);

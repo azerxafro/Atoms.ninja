@@ -42,6 +42,10 @@ const TASK_KEYWORDS = [
   "what services",
   "open ports",
   "brute force",
+  "origin ip",
+  "behind waf",
+  "waf",
+  "bypass",
 ];
 
 // Export for Node.js (backend)
