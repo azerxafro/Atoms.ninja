@@ -1715,6 +1715,34 @@ html {
   height: 250px;
 }
 
+/* Origin Finder (WAF Bypass) */
+.technique-checkboxes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.technique-checkboxes label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary, #94a3b8);
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.2s ease;
+}
+
+.technique-checkboxes label:hover {
+  color: var(--color-neon-bright, #10B981);
+}
+
+.origin-results-area {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
 /* ═══════════════════════════════════════════════
    Main App Shell (ChatGPT Style Layout)
    ═══════════════════════════════════════════════ */

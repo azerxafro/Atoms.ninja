@@ -645,9 +645,113 @@ async function processCommand(command) {
   } else if (cmd === "help") {
     return {
       message:
-        '🤖 Atom at your service, Chief.\n\nTalk naturally:\n• "check os on 192.168.1.1"\n• "scan that target"\n• "find vulnerabilities"\n\nOr direct commands:\n• nmap, sqlmap, nikto, hydra\n\nNinja ready. What\'s the target?',
+        '🤖 Atom at your service, Chief.\n\nTalk naturally:\n• "check os on 192.168.1.1"\n• "scan that target"\n• "find vulnerabilities"\n• "bypass waf and find origin of example.com"\n\nOr direct commands:\n• nmap, sqlmap, nikto, hydra\n\nNinja ready. What\'s the target?',
       type: "info",
     };
+  } else if (
+    cmd.includes("bypass") ||
+    cmd.includes("origin ip") ||
+    cmd.includes("origin of") ||
+    cmd.includes("behind waf") ||
+    cmd.includes("behind cloudflare") ||
+    cmd.includes("real ip") ||
+    (cmd.includes("waf") && cmd.includes("find"))
+  ) {
+    // WAF Bypass / Origin IP Discovery → route to dedicated engine (NOT AI)
+    const domainMatch = command.match(
+      /(?:of|for|on)\s+([a-zA-Z0-9][\w.-]+\.[a-zA-Z]{2,})/i,
+    );
+    if (!domainMatch) {
+      return {
+        message: "⚠️ Please specify a domain, e.g. 'bypass WAF and find origin of www.example.com'",
+        type: "warning",
+      };
+    }
+    const domain = domainMatch[1];
+    addTerminalLine(`🔍 Origin IP Discovery Engine activated for: ${domain}`, "success");
+    addTerminalLine("⚡ Running 6 recon techniques on AWS EC2...", "info");
+    addTerminalLine("🛡️ WAF Detection → DNS Enum → Cert Transparency → Historical → CDN Filter → Direct Probe", "info");
+    addTerminalLine("⏳ This takes 30-90 seconds...", "warning");
+
+    try {
+      const response = await fetch(`${CONFIG.BACKEND_API_URL}/waf-bypass`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain, techniques: ["all"] }),
+      });
+
+      // Read as text first, then parse JSON — prevents "Unexpected token '<'" crash
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseErr) {
+        return { message: `❌ Server returned non-JSON (HTTP ${response.status}). EC2 may not be running.\n${text.substring(0, 200)}`, type: "error" };
+      }
+
+      if (!response.ok) {
+        return { message: `❌ ${data.error || "Unknown error"}${data.hint ? " — " + data.hint : ""}`, type: "error" };
+      }
+
+      // Format results
+      let output = "\n═══════════════════════════════════════\n";
+      output += "🎯 ORIGIN IP DISCOVERY RESULTS\n";
+      output += "═══════════════════════════════════════\n\n";
+
+      if (data.summary) {
+        const s = data.summary;
+        output += `🛡️ WAF Detected: ${s.wafDetected ? "YES — " + s.wafVendor : "No WAF detected"}\n`;
+        output += `📊 Candidate IPs: ${s.totalCandidateIPs}\n`;
+        output += `🎯 Confirmed Origins: ${s.confirmedOriginIPs?.join(", ") || "None confirmed"}\n`;
+        output += `📈 Confidence: ${s.confidence}\n`;
+      }
+
+      // Technique details
+      if (data.techniques) {
+        for (const [name, tech] of Object.entries(data.techniques)) {
+          output += `\n─── ${name.replace(/_/g, " ").toUpperCase()} [${tech.status}] ───\n`;
+
+          if (name === "dns_enumeration") {
+            if (tech.data?.subdomainIPs) {
+              const subs = Object.entries(tech.data.subdomainIPs);
+              if (subs.length > 0) {
+                output += "  Subdomains with IPs:\n";
+                subs.forEach(([sub, ips]) => { output += `  → ${sub}: ${ips.join(", ")}\n`; });
+              }
+            }
+            if (tech.data?.spfIPs?.length) output += `  SPF IPs: ${tech.data.spfIPs.join(", ")}\n`;
+          }
+
+          if (name === "cert_transparency" && tech.data?.certCount) {
+            output += `  Certificates: ${tech.data.certCount}, Hostnames: ${tech.data.hostnames?.length || 0}\n`;
+          }
+
+          if (name === "historical_records" && tech.data?.historicalIPs?.length) {
+            output += `  Historical IPs: ${tech.data.historicalIPs.slice(0, 10).join(", ")}\n`;
+          }
+
+          if (name === "cloud_detection" && tech.data?.originCandidates?.length) {
+            output += `  Non-CDN candidates: ${tech.data.originCandidates.join(", ")}\n`;
+          }
+
+          if (name === "direct_probe" && tech.data?.confirmedOrigins?.length) {
+            output += `  ✅ CONFIRMED: ${tech.data.confirmedOrigins.join(", ")}\n`;
+          }
+        }
+      }
+
+      // AI Analysis
+      if (data.aiAnalysis) {
+        output += "\n═══════════════════════════════════════\n";
+        output += "🤖 AI TACTICAL ANALYSIS\n";
+        output += "═══════════════════════════════════════\n";
+        output += data.aiAnalysis + "\n";
+      }
+
+      return { message: output, type: "success" };
+    } catch (e) {
+      return { message: `❌ Network error: ${e.message}`, type: "error" };
+    }
   } else {
     // Everything else goes to AI for natural language processing
     return await processWithAI(command);

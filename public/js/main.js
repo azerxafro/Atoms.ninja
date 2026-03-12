@@ -1036,13 +1036,20 @@ function initArsenal() {
           body: JSON.stringify({ domain, techniques }),
         });
 
-        if (!response.ok) {
-          const err = await response.json().catch(() => ({ error: "Unknown error" }));
-          originResults.innerHTML += `<div class="terminal-line"><span class="terminal-error">❌ ${err.error}${err.hint ? " — " + err.hint : ""}</span></div>`;
+        // Read as text first to prevent "Unexpected token '<'" crash
+        const text = await response.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (parseErr) {
+          originResults.innerHTML += `<div class="terminal-line"><span class="terminal-error">❌ Server returned non-JSON (HTTP ${response.status}). EC2 may not be running.</span></div>`;
           return;
         }
 
-        const data = await response.json();
+        if (!response.ok) {
+          originResults.innerHTML += `<div class="terminal-line"><span class="terminal-error">❌ ${data.error || "Unknown error"}${data.hint ? " — " + data.hint : ""}</span></div>`;
+          return;
+        }
 
         // Display Summary
         originResults.innerHTML += `

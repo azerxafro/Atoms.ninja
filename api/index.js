@@ -63,9 +63,27 @@ async function proxyToEC2(path, body, timeout = 120000) {
       signal: controller.signal,
     });
     clearTimeout(timer);
-    return { status: response.status, data: await response.json() };
+    // Read as text first, then safely parse JSON
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      return { status: response.status, data };
+    } catch (parseErr) {
+      // EC2 returned non-JSON (HTML error page, nginx default, etc.)
+      return {
+        status: 502,
+        data: {
+          error: "EC2 returned non-JSON response",
+          hint: `HTTP ${response.status} — server may not be running or endpoint not found`,
+          preview: text.substring(0, 200),
+        },
+      };
+    }
   } catch (error) {
     clearTimeout(timer);
+    if (error.name === "AbortError") {
+      return { status: 504, data: { error: "EC2 request timed out", hint: `Timeout after ${timeout / 1000}s` } };
+    }
     throw error;
   }
 }
@@ -710,8 +728,15 @@ JSON only.`,
           hint: "WAF bypass requires shell tools (wafw00f, dig, nmap) which run on EC2",
         });
       }
-      const { status, data } = await proxyToEC2("/api/waf-bypass", req.body, 120000);
-      return res.status(status).json(data);
+      try {
+        const { status, data } = await proxyToEC2("/api/waf-bypass", req.body, 120000);
+        return res.status(status).json(data);
+      } catch (e) {
+        return res.status(502).json({
+          error: "Failed to connect to EC2 for WAF bypass",
+          hint: e.message,
+        });
+      }
     }
 
     // ─── Kali tool execution ─────────────────

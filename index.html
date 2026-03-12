@@ -556,23 +556,23 @@
                         </div>
                         <div class="input-group mt-3">
                           <label>Recon Techniques</label>
-                          <div class="technique-checkboxes" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
-                            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#94a3b8; cursor:pointer;">
+                          <div class="technique-checkboxes">
+                            <label>
                               <input type="checkbox" value="waf_detection" checked class="origin-technique" /> 🛡️ WAF Detection
                             </label>
-                            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#94a3b8; cursor:pointer;">
+                            <label>
                               <input type="checkbox" value="dns_enumeration" checked class="origin-technique" /> 📡 DNS Enumeration
                             </label>
-                            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#94a3b8; cursor:pointer;">
+                            <label>
                               <input type="checkbox" value="cert_transparency" checked class="origin-technique" /> 📜 Cert Transparency
                             </label>
-                            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#94a3b8; cursor:pointer;">
+                            <label>
                               <input type="checkbox" value="historical_records" checked class="origin-technique" /> 📚 Historical Records
                             </label>
-                            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#94a3b8; cursor:pointer;">
+                            <label>
                               <input type="checkbox" value="cloud_detection" checked class="origin-technique" /> ☁️ Cloud/CDN Detection
                             </label>
-                            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#94a3b8; cursor:pointer;">
+                            <label>
                               <input type="checkbox" value="direct_probe" checked class="origin-technique" /> 🎯 Direct Probe
                             </label>
                           </div>
@@ -585,9 +585,8 @@
                         </button>
                       </div>
                       <div
-                        class="terminal-output mt-4 hidden-on-load"
+                        class="terminal-output mt-4 hidden-on-load origin-results-area"
                         id="originResults"
-                        style="max-height:500px; overflow-y:auto;"
                       ></div>
                     </div>
                   </div>
