@@ -11,7 +11,7 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.KALI_MCP_PORT || 3001;
+const PORT = process.env.KALI_MCP_PORT || 3002;
 
 // CORS configuration - allow all origins for now
 app.use(cors({

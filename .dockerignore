@@ -1,0 +1,50 @@
+# Dependencies (installed fresh in container)
+node_modules/
+npm-debug.log*
+
+# Git
+.git/
+.gitignore
+
+# Frontend (deployed separately on Vercel)
+frontend/
+
+# Documentation
+docs/
+examples/
+*.md
+!package.json
+
+# Tests
+tests/
+test*.js
+demo*.js
+
+# Environment & secrets
+.env
+.env.*
+.aws-instance.env
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Deployment scripts (not needed in container)
+vercel.json
+vercel-frontend.json
+
+# Static assets (served by Vercel)
+public/
+favicon.png
+logo.png
+robots.txt
+sitemap.xml
+manifest.json
+index.html
+styles.css
+
+# Build artifacts
+*.tar.gz
+*.zip

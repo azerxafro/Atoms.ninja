@@ -126,3 +126,108 @@ bash scripts/check-aws-costs.sh
 
 ⚠️ **Do NOT deploy** ALB, WAF, or dual instances without increasing the budget — they cost $25-55/mo alone.
 
+---
+
+## 🐳 Docker Arsenal Deployment (EC2)
+
+### Overview
+
+The mega-container runs everything in one Docker image on EC2:
+- **Base**: `kalilinux/kali-rolling` with 30+ real security tools
+- **atoms-server.js** on port 3001 (AI + command execution)
+- **kali-mcp-server.js** on port 3002 (dedicated tool APIs)
+- **OWASP ZAP** on port 8080 (on-demand, saves RAM)
+- **Lab Sandbox** via Docker socket mount
+- **Wordlists**: SecLists + rockyou.txt
+- **Free MCP servers**: Weather, OKX, Filesystem, ZAP (no API keys needed)
+
+### Quick Deploy
+
+```bash
+# One-command deployment to EC2
+bash scripts/deploy-docker-ec2.sh
+```
+
+This script:
+1. Installs Docker on EC2 (if not present)
+2. Adds 2GB swap (needed for build on t3.small)
+3. Syncs project files via rsync
+4. Builds the Docker image (~10-20 min first time)
+5. Starts the container with all port mappings
+6. Verifies health endpoints
+
+### Manual Build & Run
+
+```bash
+# Build locally
+docker build -t atoms-ninja:latest .
+
+# Run with all features
+docker run -d \
+    --name atoms-ninja-arsenal \
+    --restart unless-stopped \
+    -p 3001:3001 \
+    -p 3002:3002 \
+    -p 8080:8080 \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v $(pwd)/.env:/app/.env:ro \
+    --memory 1800m \
+    --cpus 1.8 \
+    atoms-ninja:latest
+```
+
+### Port Mapping
+
+| Port | Service | Description |
+|------|---------|-------------|
+| 3001 | atoms-server.js | Main API: AI engine + command execution |
+| 3002 | kali-mcp-server.js | Dedicated Kali tool endpoints |
+| 8080 | OWASP ZAP | Security scanner (starts on-demand) |
+
+### Container Management
+
+```bash
+# View logs
+docker logs -f atoms-ninja-arsenal
+
+# Shell into container
+docker exec -it atoms-ninja-arsenal bash
+
+# PM2 status inside container
+docker exec atoms-ninja-arsenal pm2 status
+
+# Restart
+docker restart atoms-ninja-arsenal
+
+# Stop
+docker stop atoms-ninja-arsenal
+```
+
+### Health Checks
+
+```bash
+# Main API
+curl http://<EC2_IP>:3001/health
+
+# Kali MCP
+curl http://<EC2_IP>:3002/health
+
+# Test real nmap scan
+curl -X POST http://<EC2_IP>:3002/api/tools/nmap \
+    -H "Content-Type: application/json" \
+    -d '{"target":"scanme.nmap.org","options":"-sV"}'
+
+# List available tools
+curl http://<EC2_IP>:3002/api/tools
+```
+
+### Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Build fails (OOM) | Ensure 2GB swap: `sudo swapon --show` |
+| Container won't start | Check logs: `docker logs atoms-ninja-arsenal` |
+| Tools missing | Shell in and verify: `docker exec -it atoms-ninja-arsenal nmap --version` |
+| ZAP not responding | ZAP starts on-demand on first scan request |
+| Lab sandbox fails | Ensure Docker socket mounted: `-v /var/run/docker.sock:/var/run/docker.sock` |
+
