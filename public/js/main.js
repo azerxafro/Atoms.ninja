@@ -995,6 +995,142 @@ function initArsenal() {
       if (e.key === "Enter") exploitBtn.click();
     });
   }
+
+  // 7. Origin Finder (WAF Bypass) — Real recon on AWS EC2
+  const originBtn = document.getElementById("originDiscoverBtn");
+  const originDomain = document.getElementById("originDomain");
+  const originResults = document.getElementById("originResults");
+
+  if (originBtn && originDomain) {
+    originBtn.addEventListener("click", async () => {
+      const domain = originDomain.value.trim();
+      if (!domain) {
+        alert("Please enter a target domain");
+        return;
+      }
+
+      // Gather selected techniques
+      const techniques = [...document.querySelectorAll(".origin-technique:checked")]
+        .map((cb) => cb.value);
+      if (techniques.length === 0) {
+        alert("Select at least one recon technique");
+        return;
+      }
+
+      originResults.classList.remove("hidden-on-load");
+      originResults.style.display = "block";
+      originBtn.disabled = true;
+      originBtn.textContent = "⏳ Scanning...";
+
+      originResults.innerHTML = `
+        <div class="terminal-line"><span class="terminal-prompt">atom@ninja:~#</span><span class="terminal-text">🔍 Origin IP discovery for: ${domain}</span></div>
+        <div class="terminal-line"><span class="terminal-info">⚡ Running ${techniques.length} recon techniques on AWS EC2...</span></div>
+        <div class="terminal-line"><span class="terminal-info">🛡️ Techniques: ${techniques.join(", ")}</span></div>
+        <div class="terminal-line"><span class="terminal-warning">⏳ This may take 30-90 seconds depending on target...</span></div>
+      `;
+
+      try {
+        const response = await fetch(`${CONFIG.BACKEND_API_URL}/waf-bypass`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ domain, techniques }),
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ error: "Unknown error" }));
+          originResults.innerHTML += `<div class="terminal-line"><span class="terminal-error">❌ ${err.error}${err.hint ? " — " + err.hint : ""}</span></div>`;
+          return;
+        }
+
+        const data = await response.json();
+
+        // Display Summary
+        originResults.innerHTML += `
+          <br><div class="terminal-line"><span class="terminal-text">═══════════════════════════════════════</span></div>
+          <div class="terminal-line"><span class="terminal-success" style="font-size:15px; font-weight:700;">🎯 ORIGIN IP DISCOVERY RESULTS</span></div>
+          <div class="terminal-line"><span class="terminal-text">═══════════════════════════════════════</span></div>
+        `;
+
+        // WAF Detection
+        if (data.summary) {
+          const s = data.summary;
+          originResults.innerHTML += `
+            <div class="terminal-line"><span class="terminal-info">🛡️ WAF Detected: <strong style="color:${s.wafDetected ? "#f97316" : "#22c55e"}">${s.wafDetected ? "YES — " + s.wafVendor : "No WAF detected"}</strong></span></div>
+            <div class="terminal-line"><span class="terminal-info">📊 Candidate IPs: <strong>${s.totalCandidateIPs}</strong></span></div>
+            <div class="terminal-line"><span class="terminal-info">🎯 Confirmed Origins: <strong style="color:#22c55e">${s.confirmedOriginIPs?.join(", ") || "None confirmed"}</strong></span></div>
+            <div class="terminal-line"><span class="terminal-info">📈 Confidence: <strong style="color:${s.confidence === "HIGH" ? "#22c55e" : s.confidence === "MEDIUM" ? "#f59e0b" : "#ef4444"}">${s.confidence}</strong></span></div>
+          `;
+        }
+
+        // Technique-by-technique results
+        if (data.techniques) {
+          for (const [name, tech] of Object.entries(data.techniques)) {
+            const icon = {
+              waf_detection: "🛡️", dns_enumeration: "📡",
+              cert_transparency: "📜", historical_records: "📚",
+              cloud_detection: "☁️", direct_probe: "🎯",
+            }[name] || "🔧";
+
+            originResults.innerHTML += `
+              <br><div class="terminal-line"><span class="terminal-success">${icon} ${name.replace(/_/g, " ").toUpperCase()} [${tech.status}]</span></div>
+            `;
+
+            // Show key findings per technique
+            if (name === "dns_enumeration" && tech.data?.subdomainIPs) {
+              const subs = Object.entries(tech.data.subdomainIPs);
+              if (subs.length > 0) {
+                originResults.innerHTML += `<div class="terminal-line"><span class="terminal-text">  Subdomains resolving to non-CDN IPs:</span></div>`;
+                subs.forEach(([sub, ips]) => {
+                  originResults.innerHTML += `<div class="terminal-line"><span class="terminal-text" style="color:#10B981">  → ${sub}: ${ips.join(", ")}</span></div>`;
+                });
+              }
+              if (tech.data.spfIPs?.length) {
+                originResults.innerHTML += `<div class="terminal-line"><span class="terminal-text">  SPF IPs: ${tech.data.spfIPs.join(", ")}</span></div>`;
+              }
+            }
+
+            if (name === "cert_transparency" && tech.data?.certCount) {
+              originResults.innerHTML += `<div class="terminal-line"><span class="terminal-text">  Certificates found: ${tech.data.certCount}</span></div>`;
+              originResults.innerHTML += `<div class="terminal-line"><span class="terminal-text">  Unique hostnames: ${tech.data.hostnames?.length || 0}</span></div>`;
+            }
+
+            if (name === "historical_records" && tech.data?.historicalIPs?.length) {
+              originResults.innerHTML += `<div class="terminal-line"><span class="terminal-text">  Historical IPs: ${tech.data.historicalIPs.slice(0, 10).join(", ")}</span></div>`;
+            }
+
+            if (name === "cloud_detection" && tech.data?.originCandidates?.length) {
+              originResults.innerHTML += `<div class="terminal-line"><span class="terminal-text" style="color:#10B981">  Non-CDN candidates: ${tech.data.originCandidates.join(", ")}</span></div>`;
+            }
+
+            if (name === "direct_probe" && tech.data?.confirmedOrigins?.length) {
+              originResults.innerHTML += `<div class="terminal-line"><span class="terminal-success">  ✅ CONFIRMED ORIGINS: ${tech.data.confirmedOrigins.join(", ")}</span></div>`;
+            }
+          }
+        }
+
+        // AI Analysis
+        if (data.aiAnalysis) {
+          originResults.innerHTML += `
+            <br><div class="terminal-line"><span class="terminal-text">═══════════════════════════════════════</span></div>
+            <div class="terminal-line"><span class="terminal-success">🤖 AI Analysis</span></div>
+            <div class="terminal-line"><span class="terminal-text">═══════════════════════════════════════</span></div>
+            <pre style="white-space:pre-wrap; font-family:monospace; font-size:12px; color:#94a3b8; padding:8px;">${data.aiAnalysis}</pre>
+          `;
+        }
+
+      } catch (e) {
+        originResults.innerHTML += `<div class="terminal-line"><span class="terminal-error">❌ Network error: ${e.message}</span></div>`;
+      } finally {
+        originBtn.disabled = false;
+        originBtn.textContent = "🔍 DISCOVER ORIGIN IP";
+        originResults.scrollTop = originResults.scrollHeight;
+      }
+    });
+
+    originDomain.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") originBtn.click();
+    });
+  }
 }
 
 // Call init once DOM is likely ready (we're deferred so this is fine, or hook to load)

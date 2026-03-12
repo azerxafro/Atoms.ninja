@@ -25,6 +25,7 @@ const {
   buildThinkingChain,
 } = require("./lib/ai-core");
 const { resolveDomain, isValidDomain, extractDomain } = require("./lib/ip-resolver");
+const { runFullDiscovery } = require("./lib/waf-bypass");
 const { initAdminSdk, listDomainUsers } = require("./lib/google-admin");
 
 // Backward-compat alias (used in /api/openrouter route below)
@@ -595,7 +596,107 @@ app.post("/api/multi-ai", async (req, res) => {
       /* not JSON */
     }
 
-    // Regular text response
+    // Regular text response — BUT if this was a task query, retry with stronger JSON enforcement
+    if (isTaskRequest) {
+      try {
+        const retryMessages = [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message },
+          { role: "assistant", content: reply },
+          {
+            role: "user",
+            content: `Please format your answer as a single JSON object with no surrounding text:\n{"action":"execute","command":"<full shell command>","explanation":"<1 line>"}\nOnly the JSON, nothing else.`,
+          },
+        ];
+        const retryResult = await callOpenRouter(retryMessages);
+        const retryMatch = retryResult.content.match(
+          /\{[\s\S]*"action"\s*:\s*"execute"[\s\S]*\}/,
+        );
+        if (retryMatch) {
+          const parsed = JSON.parse(retryMatch[0]);
+          if (parsed.action === "execute" && parsed.command) {
+            const toolName = parsed.command.split(/\s+/)[0];
+
+            if (ALLOWED_COMMANDS.includes(toolName)) {
+              console.log(`⚡ AI retry auto-executing: ${parsed.command}`);
+              const fullCmd = parsed.command.trim();
+              const isChained = /[&|;]/.test(fullCmd);
+
+              let toolOutput = null;
+              let toolError = null;
+
+              try {
+                if (isChained) {
+                  const result = await new Promise((resolve, reject) => {
+                    const child = spawn("bash", ["-c", fullCmd], {
+                      shell: false,
+                      env: {
+                        ...process.env,
+                        PATH:
+                          process.env.PATH +
+                          ":/usr/local/bin:/usr/bin:/usr/sbin:/usr/local/go/bin",
+                      },
+                    });
+                    let stdout = "";
+                    let stderr = "";
+                    const timer = setTimeout(() => {
+                      child.kill("SIGKILL");
+                      reject(new Error("Command timed out after 300s"));
+                    }, 300000);
+                    child.stdout.on("data", (d) => { stdout += d.toString(); });
+                    child.stderr.on("data", (d) => { stderr += d.toString(); });
+                    child.on("close", (code) => {
+                      clearTimeout(timer);
+                      resolve({ stdout, stderr, code: code || 0 });
+                    });
+                    child.on("error", (err) => {
+                      clearTimeout(timer);
+                      reject(err);
+                    });
+                  });
+                  toolOutput = { result: result.stdout, stderr: result.stderr, exitCode: result.code };
+                } else {
+                  const cmdParts = fullCmd.split(/\s+/);
+                  const tool = cmdParts[0];
+                  const args = cmdParts.slice(1);
+                  const timeout = TOOL_TIMEOUTS[tool] || TOOL_TIMEOUTS.default;
+                  const result = await executeTool(tool, args, { timeout });
+                  toolOutput = { result: result.stdout, stderr: result.stderr, exitCode: result.code };
+                }
+              } catch (execErr) {
+                toolError = execErr.message;
+              }
+
+              const thinking = buildThinkingChain(message, parsed, { toolResult: toolOutput });
+
+              return res.status(200).json({
+                provider: retryResult.provider,
+                model: retryResult.model,
+                autoExecute: parsed,
+                response: parsed.explanation,
+                thinking: thinking,
+                toolOutput: toolOutput,
+                toolError: toolError,
+              });
+            }
+
+            // Not whitelisted — return the parsed command without execution
+            const thinking = buildThinkingChain(message, parsed);
+            return res.status(200).json({
+              provider: retryResult.provider,
+              model: retryResult.model,
+              autoExecute: parsed,
+              response: parsed.explanation,
+              thinking: thinking,
+            });
+          }
+        }
+      } catch (e) {
+        /* retry failed, fall through to text response */
+      }
+    }
+
+    // Plain text response (no tool execution)
     return res.status(200).json({
       provider: aiResult.provider,
       model: aiResult.model,
@@ -798,6 +899,50 @@ app.post("/api/execute-shell", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ═══════════════════════════════════════════════
+//  POST /api/waf-bypass — Origin IP Discovery Engine
+// ═══════════════════════════════════════════════
+
+app.post("/api/waf-bypass", async (req, res) => {
+  try {
+    const { domain, techniques = ["all"] } = req.body;
+    if (!domain) return res.status(400).json({ error: "domain required" });
+
+    // Validate domain
+    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+    if (!isValidDomain(cleanDomain)) {
+      return res.status(400).json({ error: `Invalid domain: ${cleanDomain}` });
+    }
+
+    console.log(`🔍 WAF Bypass discovery started for: ${cleanDomain}`);
+    console.log(`   Techniques: ${techniques.join(", ")}`);
+
+    const results = await runFullDiscovery(cleanDomain, techniques);
+
+    // AI correlation — summarize findings
+    try {
+      const aiSummary = await callAI([
+        {
+          role: "system",
+          content: `You are an origin-IP analysis expert. Given WAF bypass recon results, provide a concise tactical summary. Include: (1) WAF vendor identified, (2) most likely origin IP(s) with confidence, (3) evidence supporting each candidate, (4) recommended next steps. Keep it under 300 words. No markdown.`,
+        },
+        {
+          role: "user",
+          content: JSON.stringify(results.summary) + "\n\nFull results: " + JSON.stringify(results.techniques, null, 0).substring(0, 3000),
+        },
+      ]);
+      results.aiAnalysis = aiSummary.content;
+    } catch (e) {
+      results.aiAnalysis = "AI analysis unavailable.";
+    }
+
+    return res.json(results);
+  } catch (error) {
+    console.error("WAF Bypass error:", error.message);
+    return res.status(500).json({ error: error.message });
   }
 });
 

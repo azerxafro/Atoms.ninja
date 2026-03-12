@@ -202,6 +202,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="sidebar-icon"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
                 Exploit DB
               </div>
+              <div class="sidebar-item history-item" data-tab="tab-origin-finder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" class="sidebar-icon"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="11" y1="8" x2="11" y2="14" /><line x1="8" y1="11" x2="14" y2="11" /></svg>
+                Origin Finder
+              </div>
             </div>
           </div>
         </nav>
@@ -522,6 +526,69 @@
                           EC2...</span
                         >
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+            <!-- 7. Origin Finder (WAF Bypass) -->
+                <div class="arsenal-tab hidden-on-load" id="tab-origin-finder">
+                  <div class="arsenal-card">
+                    <div class="arsenal-header">
+                      <div class="arsenal-dots">
+                        <span class="dot red"></span
+                        ><span class="dot yellow"></span
+                        ><span class="dot green"></span>
+                      </div>
+                      <div class="arsenal-title">
+                        🔍 Origin IP Finder — WAF Bypass Engine
+                      </div>
+                    </div>
+                    <div class="demo-content p-4">
+                      <div class="gui-form">
+                        <div class="input-group">
+                          <label>Target Domain</label>
+                          <input
+                            type="text"
+                            id="originDomain"
+                            placeholder="e.g. www.example.com"
+                            class="prompt-input scanner-input-custom"
+                          />
+                        </div>
+                        <div class="input-group mt-3">
+                          <label>Recon Techniques</label>
+                          <div class="technique-checkboxes" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+                            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#94a3b8; cursor:pointer;">
+                              <input type="checkbox" value="waf_detection" checked class="origin-technique" /> 🛡️ WAF Detection
+                            </label>
+                            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#94a3b8; cursor:pointer;">
+                              <input type="checkbox" value="dns_enumeration" checked class="origin-technique" /> 📡 DNS Enumeration
+                            </label>
+                            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#94a3b8; cursor:pointer;">
+                              <input type="checkbox" value="cert_transparency" checked class="origin-technique" /> 📜 Cert Transparency
+                            </label>
+                            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#94a3b8; cursor:pointer;">
+                              <input type="checkbox" value="historical_records" checked class="origin-technique" /> 📚 Historical Records
+                            </label>
+                            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#94a3b8; cursor:pointer;">
+                              <input type="checkbox" value="cloud_detection" checked class="origin-technique" /> ☁️ Cloud/CDN Detection
+                            </label>
+                            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#94a3b8; cursor:pointer;">
+                              <input type="checkbox" value="direct_probe" checked class="origin-technique" /> 🎯 Direct Probe
+                            </label>
+                          </div>
+                        </div>
+                        <button
+                          class="btn-primary mt-4 scanner-btn-custom"
+                          id="originDiscoverBtn"
+                        >
+                          🔍 DISCOVER ORIGIN IP
+                        </button>
+                      </div>
+                      <div
+                        class="terminal-output mt-4 hidden-on-load"
+                        id="originResults"
+                        style="max-height:500px; overflow-y:auto;"
+                      ></div>
                     </div>
                   </div>
                 </div>

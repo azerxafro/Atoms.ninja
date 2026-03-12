@@ -702,6 +702,18 @@ JSON only.`,
       }
     }
 
+    // ─── WAF Bypass / Origin IP Discovery ──────
+    if (path === "/api/waf-bypass") {
+      if (!EC2_ENDPOINT) {
+        return res.status(503).json({
+          error: "EC2 arsenal required for WAF bypass",
+          hint: "WAF bypass requires shell tools (wafw00f, dig, nmap) which run on EC2",
+        });
+      }
+      const { status, data } = await proxyToEC2("/api/waf-bypass", req.body, 120000);
+      return res.status(status).json(data);
+    }
+
     // ─── Kali tool execution ─────────────────
     if (path === "/api/kali") {
       if (!EC2_ENDPOINT) {
