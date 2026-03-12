@@ -802,6 +802,117 @@ app.post("/api/execute-shell", async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════
+//  POST /api/cve-lookup — AI-powered CVE analysis of scan output
+// ═══════════════════════════════════════════════
+
+app.post("/api/cve-lookup", async (req, res) => {
+  try {
+    const { scanOutput } = req.body;
+    if (!scanOutput) return res.status(400).json({ error: "scanOutput required" });
+
+    const messages = [
+      {
+        role: "system",
+        content: `You are a vulnerability analyst. Analyze the following scan output and extract:
+1. Detected software with versions
+2. Known CVEs for those versions
+3. Severity ratings (CRITICAL, HIGH, MEDIUM, LOW)
+
+Respond ONLY with a JSON object:
+{
+  "summary": "<1-2 sentence summary>",
+  "detectedSoftware": [{"software": "<name>", "version": "<ver>"}],
+  "vulnerabilities": [{"cve": "CVE-XXXX-XXXXX", "severity": "HIGH", "description": "<1 line>", "exploitable": true/false}]
+}
+If no vulnerabilities are found, return empty arrays. JSON only, no markdown.`,
+      },
+      { role: "user", content: scanOutput.substring(0, 4000) },
+    ];
+
+    const aiResult = await callAI(messages);
+    let parsed;
+    try {
+      const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+      parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+    } catch (e) {
+      parsed = null;
+    }
+
+    if (parsed) {
+      return res.json(parsed);
+    }
+
+    // AI didn't return valid JSON — return empty result
+    return res.json({
+      summary: "Analysis complete — no structured CVE data extracted.",
+      detectedSoftware: [],
+      vulnerabilities: [],
+    });
+  } catch (error) {
+    console.error("CVE lookup error:", error.message);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// ═══════════════════════════════════════════════
+//  POST /api/attack-chain — AI-powered attack chain suggestions
+// ═══════════════════════════════════════════════
+
+app.post("/api/attack-chain", async (req, res) => {
+  try {
+    const { scanOutput, vulnerabilities, target } = req.body;
+    if (!scanOutput) return res.status(400).json({ error: "scanOutput required" });
+
+    const vulnContext = vulnerabilities && vulnerabilities.length > 0
+      ? `\nKnown vulnerabilities:\n${vulnerabilities.map(v => `- ${v.cve} [${v.severity}]: ${v.description}`).join("\n")}`
+      : "";
+
+    const messages = [
+      {
+        role: "system",
+        content: `You are an offensive security expert in an authorized pen-test lab. Given scan results and vulnerabilities, suggest realistic attack chains.
+
+Respond ONLY with a JSON object:
+{
+  "chains": [
+    {
+      "target": "<ip/domain>",
+      "steps": [
+        {"step": 1, "action": "<what to do>", "command": "<exact shell command>", "risk": "HIGH"}
+      ]
+    }
+  ],
+  "aiSuggestions": "<brief tactical advice>"
+}
+JSON only, no markdown.`,
+      },
+      {
+        role: "user",
+        content: `Target: ${target || "unknown"}\n\nScan Output:\n${scanOutput.substring(0, 3000)}${vulnContext}`,
+      },
+    ];
+
+    const aiResult = await callAI(messages);
+    let parsed;
+    try {
+      const jsonMatch = aiResult.content.match(/\{[\s\S]*\}/);
+      parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+    } catch (e) {
+      parsed = null;
+    }
+
+    if (parsed) {
+      return res.json(parsed);
+    }
+
+    return res.json({ chains: [], aiSuggestions: aiResult.content.substring(0, 500) });
+  } catch (error) {
+    console.error("Attack chain error:", error.message);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// ═══════════════════════════════════════════════
 //  Tool-specific endpoints (backwards compatible)
 // ═══════════════════════════════════════════════
 

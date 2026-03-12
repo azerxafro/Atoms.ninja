@@ -553,8 +553,10 @@ async function analyzeCVEs(scanOutput, originalCommand) {
 
     if (data.vulnerabilities && data.vulnerabilities.length > 0) {
       // Add vulnerabilities to session
-      atomSession.currentSession.vulnerabilities.push(...data.vulnerabilities);
-      atomSession.saveCurrentSession();
+      if (typeof atomSession !== "undefined") {
+        atomSession.currentSession.vulnerabilities.push(...data.vulnerabilities);
+        atomSession.saveCurrentSession();
+      }
 
       // Display formatted results
       addTerminalLine(`\n${"═".repeat(60)}`, "info");

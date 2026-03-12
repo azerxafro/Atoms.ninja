@@ -642,6 +642,66 @@ module.exports = async (req, res) => {
       return res.status(status).json(data);
     }
 
+    // ─── CVE Lookup (AI-powered) ─────────────
+    if (path === "/api/cve-lookup") {
+      if (EC2_ENDPOINT) {
+        try {
+          const { status, data } = await proxyToEC2("/api/cve-lookup", req.body, 60000);
+          return res.status(status).json(data);
+        } catch (e) { /* fall through to direct AI */ }
+      }
+      // Direct AI fallback
+      try {
+        const { scanOutput } = req.body || {};
+        if (!scanOutput) return res.status(400).json({ error: "scanOutput required" });
+        const result = await callAI([
+          {
+            role: "system",
+            content: `You are a vulnerability analyst. Analyze scan output and extract CVEs.
+Respond ONLY with JSON: {"summary":"...","detectedSoftware":[{"software":"...","version":"..."}],"vulnerabilities":[{"cve":"CVE-...","severity":"HIGH","description":"...","exploitable":true}]}
+If none found, return empty arrays. JSON only.`,
+          },
+          { role: "user", content: scanOutput.substring(0, 4000) },
+        ]);
+        const jsonMatch = result.content.match(/\{[\s\S]*\}/);
+        const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+        return res.json(parsed || { summary: "No CVE data extracted.", detectedSoftware: [], vulnerabilities: [] });
+      } catch (e) {
+        return res.status(500).json({ error: e.message });
+      }
+    }
+
+    // ─── Attack Chain (AI-powered) ───────────
+    if (path === "/api/attack-chain") {
+      if (EC2_ENDPOINT) {
+        try {
+          const { status, data } = await proxyToEC2("/api/attack-chain", req.body, 60000);
+          return res.status(status).json(data);
+        } catch (e) { /* fall through to direct AI */ }
+      }
+      try {
+        const { scanOutput, vulnerabilities, target } = req.body || {};
+        if (!scanOutput) return res.status(400).json({ error: "scanOutput required" });
+        const vulnCtx = vulnerabilities?.length
+          ? `\nVulnerabilities:\n${vulnerabilities.map(v => `- ${v.cve} [${v.severity}]`).join("\n")}`
+          : "";
+        const result = await callAI([
+          {
+            role: "system",
+            content: `You are an offensive security expert in an authorized pen-test lab. Suggest attack chains.
+Respond ONLY with JSON: {"chains":[{"target":"...","steps":[{"step":1,"action":"...","command":"...","risk":"HIGH"}]}],"aiSuggestions":"..."}
+JSON only.`,
+          },
+          { role: "user", content: `Target: ${target || "unknown"}\nScan:\n${scanOutput.substring(0, 3000)}${vulnCtx}` },
+        ]);
+        const jsonMatch = result.content.match(/\{[\s\S]*\}/);
+        const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+        return res.json(parsed || { chains: [], aiSuggestions: result.content.substring(0, 500) });
+      } catch (e) {
+        return res.status(500).json({ error: e.message });
+      }
+    }
+
     // ─── Kali tool execution ─────────────────
     if (path === "/api/kali") {
       if (!EC2_ENDPOINT) {

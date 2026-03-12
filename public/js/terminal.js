@@ -692,7 +692,7 @@ async function executeSecurityTool(command, toolName) {
     const scanOutput = data.result || data.stdout || "";
 
     // Store scan in session
-    atomSession.addScan(command, scanOutput);
+    if (typeof atomSession !== "undefined") atomSession.addScan(command, scanOutput);
 
     // Auto-analyze for CVEs if it's a scan
     if (toolName === "nmap" && scanOutput.length > 200) {
@@ -733,13 +733,14 @@ async function executeScan(command) {
     const parts = command.trim().split(/\s+/);
     const target = parts[parts.length - 1];
     const options = "-Pn -T4 -F"; // Fast scan for "scan" command
+    const optParts = options.split(/\s+/).filter(Boolean);
 
     addTerminalLine(`⚡ Executing: nmap ${options} ${target}`, "info");
     addTerminalLine("🥷 Connecting to Ninja...", "info");
     addTerminalLine(`⚡ Scanning ${target}...`, "info");
 
-    // Use generic backend API URL
-    const endpoint = `${CONFIG.BACKEND_API_URL}/tools/nmap`;
+    // Use /api/kali which Vercel correctly routes to EC2
+    const endpoint = CONFIG.KALI_MCP_ENDPOINT;
 
     console.log("🔧 DEBUG - Endpoint:", endpoint);
     console.log("🔧 DEBUG - Target:", target, "Options:", options);
@@ -747,7 +748,7 @@ async function executeScan(command) {
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ target, options }),
+      body: JSON.stringify({ tool: "nmap", args: [...optParts, target] }),
     });
 
     console.log("🔧 DEBUG - Response status:", response.status);
